@@ -1,0 +1,265 @@
+﻿rank,course_id,course_name,semester_range,n_semesters,avg_final_grade,total_students,avg_pass_pct,avg_general_rank,n_general_rank,hist_url,cf_url
+1,00960275,הגורם האנושי באיסוף נתונים,201801 to 202501,8,85.637,683,99.224,1.380,50,https://michael-maltsev.github.io/technion-histograms/00960275/,https://cheesefork.cf/?course=00960275&semester=202401
+2,02360370,תכנות מקבילי ומבוזר לעיבוד נתונים ולמידה חישובית,201601 to 202401,9,81.801,576,97.083,1.500,12,https://michael-maltsev.github.io/technion-histograms/02360370/,https://cheesefork.cf/?course=02360370&semester=202401
+3,00340056,מבוא לחישוב מדעי והנדסי,202201 to 202401,5,74.918,472,87.987,1.579,19,https://michael-maltsev.github.io/technion-histograms/00340056/,https://cheesefork.cf/?course=00340056&semester=202401
+4,03250009,להשאיר חותם במדע ובאמנות,202301 to 202301,1,90.927,41,100.000,1.636,11,https://michael-maltsev.github.io/technion-histograms/03250009/,https://cheesefork.cf/?course=03250009&semester=202401
+5,02340311,פרויקט שנתי בהנדסת תוכנה,201801 to 202501,8,91.240,405,100.000,1.700,20,https://michael-maltsev.github.io/technion-histograms/02340311/,https://cheesefork.cf/?course=02340311&semester=202401
+6,00140505,חומרי בנייה,201401 to 202501,13,77.274,2221,92.527,1.923,13,https://michael-maltsev.github.io/technion-histograms/00140505/,https://cheesefork.cf/?course=00140505&semester=202401
+7,00440124,אלקטרוניקה פיסיקלית,201702 to 202501,14,80.923,1082,96.511,1.933,45,https://michael-maltsev.github.io/technion-histograms/00440124/,https://cheesefork.cf/?course=00440124&semester=202401
+8,01140081,מעבדה לפיסיקה 1,201401 to 202402,24,89.760,1620,99.733,2.000,19,https://michael-maltsev.github.io/technion-histograms/01140081/,https://cheesefork.cf/?course=01140081&semester=202401
+9,01140032,מעבדה לפיסיקה 1ח',201401 to 202501,28,89.315,2308,98.861,2.118,34,https://michael-maltsev.github.io/technion-histograms/01140032/,https://cheesefork.cf/?course=01140032&semester=202401
+10,03240527,יסודות היזמות,201902 to 202402,11,94.357,792,100.000,2.222,18,https://michael-maltsev.github.io/technion-histograms/03240527/,https://cheesefork.cf/?course=03240527&semester=202401
+11,03350010,תכן ביומכני בסיסי,201502 to 202401,10,82.454,731,97.057,2.294,17,https://michael-maltsev.github.io/technion-histograms/03350010/,https://cheesefork.cf/?course=03350010&semester=202401
+12,02360322,מערכות אחסון מידע,201801 to 202401,7,77.964,390,94.990,2.316,19,https://michael-maltsev.github.io/technion-histograms/02360322/,https://cheesefork.cf/?course=02360322&semester=202401
+13,01040221,פונקצ' מרוכבות והתמרות אינטגרליות,201101 to 202301,28,72.788,6600,88.884,2.403,77,https://michael-maltsev.github.io/technion-histograms/01040221/,https://cheesefork.cf/?course=01040221&semester=202401
+14,02360523,מבוא לביואינפורמטיקה,201501 to 202401,9,89.655,557,98.390,2.438,16,https://michael-maltsev.github.io/technion-histograms/02360523/,https://cheesefork.cf/?course=02360523&semester=202401
+15,03240518,"חדשנות, יצירתיות ואושר",202001 to 202501,7,94.448,444,97.757,2.444,18,https://michael-maltsev.github.io/technion-histograms/03240518/,https://cheesefork.cf/?course=03240518&semester=202401
+16,00460189,תכן מסננים אנלוגיים,201502 to 202401,9,81.080,185,95.676,2.455,11,https://michael-maltsev.github.io/technion-histograms/00460189/,https://cheesefork.cf/?course=00460189&semester=202401
+17,01040215,פונקציות מרוכבות א',200302 to 202501,23,70.167,4835,82.800,2.455,101,https://michael-maltsev.github.io/technion-histograms/01040215/,https://cheesefork.cf/?course=01040215&semester=202401
+18,01250013,מעבדה בכימיה כללית,201202 to 202402,23,90.396,4199,98.898,2.481,27,https://michael-maltsev.github.io/technion-histograms/01250013/,https://cheesefork.cf/?course=01250013&semester=202401
+19,00350188,תורת הבקרה,201402 to 202402,11,74.848,406,89.414,2.500,12,https://michael-maltsev.github.io/technion-histograms/00350188/,https://cheesefork.cf/?course=00350188&semester=202401
+20,03350001,מעבדה בהנדסה ביו,201502 to 202402,15,93.557,659,100.000,2.545,11,https://michael-maltsev.github.io/technion-histograms/03350001/,https://cheesefork.cf/?course=03350001&semester=202401
+21,00960210,יסודות בינה מלאכותית וישומיה,201501 to 202401,9,78.414,1297,93.673,2.560,25,https://michael-maltsev.github.io/technion-histograms/00960210/,https://cheesefork.cf/?course=00960210&semester=202401
+22,01240213,כימיה אנליטית 2 (מורחב),201402 to 202402,11,76.609,879,90.140,2.571,14,https://michael-maltsev.github.io/technion-histograms/01240213/,https://cheesefork.cf/?course=01240213&semester=202401
+23,03250002,סטודיו אומן בקמפוס 2,202202 to 202401,4,94.495,75,94.720,2.583,12,https://michael-maltsev.github.io/technion-histograms/03250002/,https://cheesefork.cf/?course=03250002&semester=202401
+24,03240528,מנהיגות יזמית,201902 to 202501,11,94.302,868,98.976,2.600,20,https://michael-maltsev.github.io/technion-histograms/03240528/,https://cheesefork.cf/?course=03240528&semester=202401
+25,01340142,מעבדה בגנטיקה מולקולרית,201501 to 202401,10,87.114,534,100.000,2.615,13,https://michael-maltsev.github.io/technion-histograms/01340142/,https://cheesefork.cf/?course=01340142&semester=202401
+26,01140030,מעבדה לפיסיקה 2 מח',201001 to 202402,17,92.535,566,99.479,2.647,17,https://michael-maltsev.github.io/technion-histograms/01140030/,https://cheesefork.cf/?course=01140030&semester=202401
+27,00940594,עקרונות הכלכלה למהנדסים,201302 to 202501,20,75.538,1616,88.194,2.656,32,https://michael-maltsev.github.io/technion-histograms/00940594/,https://cheesefork.cf/?course=00940594&semester=202401
+28,00340030,תהליכי יצור,201401 to 202501,22,81.648,1518,96.337,2.667,27,https://michael-maltsev.github.io/technion-histograms/00340030/,https://cheesefork.cf/?course=00340030&semester=202401
+29,00340051,דינמיקה ומכניקה של תנודות,202001 to 202402,7,82.182,481,91.809,2.667,12,https://michael-maltsev.github.io/technion-histograms/00340051/,https://cheesefork.cf/?course=00340051&semester=202401
+30,03240992,סוגיות אתיות במרחב האישי והציבורי,201801 to 202403,16,93.969,822,99.307,2.692,13,https://michael-maltsev.github.io/technion-histograms/03240992/,https://cheesefork.cf/?course=03240992&semester=202401
+31,02340117,מבוא למדעי המחשב ח',201401 to 202402,30,75.348,6703,87.946,2.707,92,https://michael-maltsev.github.io/technion-histograms/02340117/,https://cheesefork.cf/?course=02340117&semester=202401
+32,02340128,מבוא למחשב שפת פייתון,201901 to 202403,17,74.226,6054,85.558,2.709,127,https://michael-maltsev.github.io/technion-histograms/02340128/,https://cheesefork.cf/?course=02340128&semester=202401
+33,01160354,אסטרופיסיקה וקוסמולוגיה,201202 to 202501,10,80.867,345,96.519,2.714,14,https://michael-maltsev.github.io/technion-histograms/01160354/,https://cheesefork.cf/?course=01160354&semester=202401
+34,00940564,מבוא לניהול פיננסי,201402 to 202501,15,79.504,1984,91.548,2.718,39,https://michael-maltsev.github.io/technion-histograms/00940564/,https://cheesefork.cf/?course=00940564&semester=202401
+35,00140108,סטטיקת מבנים,201501 to 202401,12,72.906,1883,88.857,2.750,12,https://michael-maltsev.github.io/technion-histograms/00140108/,https://cheesefork.cf/?course=00140108&semester=202401
+36,02360201,מבוא לייצוג ועיבוד מידע,202101 to 202402,7,81.105,152,96.783,2.750,12,https://michael-maltsev.github.io/technion-histograms/02360201/,https://cheesefork.cf/?course=02360201&semester=202401
+37,02360267,מבנה מחשבים,201801 to 202402,14,80.825,1610,96.103,2.759,29,https://michael-maltsev.github.io/technion-histograms/02360267/,https://cheesefork.cf/?course=02360267&semester=202401
+38,03260000,פרקים בהיסטוריה ופילוסופיה מראשית המחשוב ועד לאינטרנט,202002 to 202202,4,92.212,207,100.000,2.765,17,https://michael-maltsev.github.io/technion-histograms/03260000/,https://cheesefork.cf/?course=03260000&semester=202401
+39,00340034,הנע חשמלי,201302 to 202402,13,84.447,1606,94.322,2.800,15,https://michael-maltsev.github.io/technion-histograms/00340034/,https://cheesefork.cf/?course=00340034&semester=202401
+40,00460880,תכן לוגי ממוחשב של שבבים,201602 to 202401,7,84.611,167,98.210,2.800,15,https://michael-maltsev.github.io/technion-histograms/00460880/,https://cheesefork.cf/?course=00460880&semester=202401
+41,01040192,מבוא למתמטיקה שמושית,201602 to 202501,17,80.671,558,92.455,2.800,10,https://michael-maltsev.github.io/technion-histograms/01040192/,https://cheesefork.cf/?course=01040192&semester=202401
+42,01240212,מעבדה בכימיה אנליטית 1 מורחב,201403 to 202501,17,91.718,364,99.209,2.800,10,https://michael-maltsev.github.io/technion-histograms/01240212/,https://cheesefork.cf/?course=01240212&semester=202401
+43,00940704,סדנת תכנות בשפת סי,202001 to 202501,6,75.380,392,86.912,2.818,22,https://michael-maltsev.github.io/technion-histograms/00940704/,https://cheesefork.cf/?course=00940704&semester=202401
+44,01340020,גנטיקה כללית,201002 to 202401,31,75.237,3955,88.526,2.849,53,https://michael-maltsev.github.io/technion-histograms/01340020/,https://cheesefork.cf/?course=01340020&semester=202401
+45,00940412,הסתברות מ,201301 to 202402,24,73.491,6036,85.637,2.854,130,https://michael-maltsev.github.io/technion-histograms/00940412/,https://cheesefork.cf/?course=00940412&semester=202401
+46,00460209,מבנה מערכות הפעלה,201202 to 202402,23,74.092,2322,89.077,2.862,29,https://michael-maltsev.github.io/technion-histograms/00460209/,https://cheesefork.cf/?course=00460209&semester=202401
+47,00970414,סטטיסטיקה 2,201802 to 202501,9,78.544,813,89.180,2.862,29,https://michael-maltsev.github.io/technion-histograms/00970414/,https://cheesefork.cf/?course=00970414&semester=202401
+48,00340032,מערכות ליניאריות מ',201302 to 202402,20,79.382,1853,91.120,2.870,23,https://michael-maltsev.github.io/technion-histograms/00340032/,https://cheesefork.cf/?course=00340032&semester=202401
+49,02360363,מסדי נתונים,201602 to 202401,16,79.587,2065,94.766,2.875,32,https://michael-maltsev.github.io/technion-histograms/02360363/,https://cheesefork.cf/?course=02360363&semester=202401
+50,03240266,מדע וביקורות המדע,202001 to 202501,6,89.603,260,97.112,2.880,25,https://michael-maltsev.github.io/technion-histograms/03240266/,https://cheesefork.cf/?course=03240266&semester=202401
+51,02360360,תורת הקומפילציה,201502 to 202402,19,75.575,3483,90.506,2.884,43,https://michael-maltsev.github.io/technion-histograms/02360360/,https://cheesefork.cf/?course=02360360&semester=202401
+52,01140086,גלים,201101 to 202501,13,75.914,1166,88.573,2.944,36,https://michael-maltsev.github.io/technion-histograms/01140086/,https://cheesefork.cf/?course=01140086&semester=202401
+53,02340123,מערכות הפעלה,201402 to 202402,21,77.302,5192,91.075,2.953,85,https://michael-maltsev.github.io/technion-histograms/02340123/,https://cheesefork.cf/?course=02340123&semester=202401
+54,00970209,למידה חישובית 2,201802 to 202401,7,87.922,848,98.316,2.966,29,https://michael-maltsev.github.io/technion-histograms/00970209/,https://cheesefork.cf/?course=00970209&semester=202401
+55,00340043,שרטוט הנדסי ממוחשב,201401 to 202401,17,91.287,1563,99.353,2.968,31,https://michael-maltsev.github.io/technion-histograms/00340043/,https://cheesefork.cf/?course=00340043&semester=202401
+56,00940345,מתמטיקה דיסקרטית ת',201602 to 202501,17,66.439,1988,76.747,2.968,94,https://michael-maltsev.github.io/technion-histograms/00940345/,https://cheesefork.cf/?course=00940345&semester=202401
+57,01040228,משוואות דיפרנציאליות חלקיות מ',201401 to 202403,28,72.387,5165,84.482,2.982,56,https://michael-maltsev.github.io/technion-histograms/01040228/,https://cheesefork.cf/?course=01040228&semester=202401
+58,00940224,מבני נתונים ואלגוריתמים,201701 to 202401,10,76.380,1512,92.078,2.983,59,https://michael-maltsev.github.io/technion-histograms/00940224/,https://cheesefork.cf/?course=00940224&semester=202401
+59,00540316,תרמודינמיקה א' מתקדם,201802 to 202501,8,76.729,573,90.612,3.000,12,https://michael-maltsev.github.io/technion-histograms/00540316/,https://cheesefork.cf/?course=00540316&semester=202401
+60,01240507,כימיה כללית ופיזיקלית לרפואה,202301 to 202401,2,78.328,311,91.447,3.000,11,https://michael-maltsev.github.io/technion-histograms/01240507/,https://cheesefork.cf/?course=01240507&semester=202401
+61,03360022,מתא לרקמה,201301 to 202401,11,81.126,756,97.198,3.000,14,https://michael-maltsev.github.io/technion-histograms/03360022/,https://cheesefork.cf/?course=03360022&semester=202401
+62,01040043,חשבון דיפרנציאלי ואינטגרלי 2מ1,202202 to 202402,3,68.178,1232,80.769,3.019,52,https://michael-maltsev.github.io/technion-histograms/01040043/,https://cheesefork.cf/?course=01040043&semester=202401
+63,01040285,משוואות דיפרנציאליות רגילות א',201202 to 202501,21,76.321,984,87.366,3.034,29,https://michael-maltsev.github.io/technion-histograms/01040285/,https://cheesefork.cf/?course=01040285&semester=202401
+64,01240400,כימיה קוונטית 1,201501 to 202501,11,79.498,683,90.234,3.038,26,https://michael-maltsev.github.io/technion-histograms/01240400/,https://cheesefork.cf/?course=01240400&semester=202401
+65,01040022,חשבון דיפרנציאלי ואינטגרלי 2מ',201002 to 202501,25,68.972,4768,82.430,3.049,61,https://michael-maltsev.github.io/technion-histograms/01040022/,https://cheesefork.cf/?course=01040022&semester=202401
+66,00940411,הסתברות ת',201401 to 202501,21,70.061,2370,87.660,3.051,39,https://michael-maltsev.github.io/technion-histograms/00940411/,https://cheesefork.cf/?course=00940411&semester=202401
+67,00840225,דינמיקה,201402 to 202401,11,73.531,821,88.134,3.053,19,https://michael-maltsev.github.io/technion-histograms/00840225/,https://cheesefork.cf/?course=00840225&semester=202401
+68,03260005,פריצות דרך בתולדות החשיבה המתמטית,202102 to 202401,4,91.566,390,94.803,3.067,15,https://michael-maltsev.github.io/technion-histograms/03260005/,https://cheesefork.cf/?course=03260005&semester=202401
+69,01240510,כימיה פיסיקלית,201201 to 202501,12,76.567,1123,87.008,3.080,25,https://michael-maltsev.github.io/technion-histograms/01240510/,https://cheesefork.cf/?course=01240510&semester=202401
+70,01040042,חשבון דיפרנציאלי ואינטגרלי 1מ2,202201 to 202501,4,62.678,1847,71.949,3.086,70,https://michael-maltsev.github.io/technion-histograms/01040042/,https://cheesefork.cf/?course=01040042&semester=202401
+71,01040295,חשבון אינפיניטסימלי 3,201901 to 202402,12,74.756,666,82.779,3.093,43,https://michael-maltsev.github.io/technion-histograms/01040295/,https://cheesefork.cf/?course=01040295&semester=202401
+72,00440202,אותות אקראיים,200402 to 202501,30,73.947,4810,87.773,3.096,52,https://michael-maltsev.github.io/technion-histograms/00440202/,https://cheesefork.cf/?course=00440202&semester=202401
+73,00440268,מבוא למבני נתונים ואלגוריתמים,201001 to 202501,26,76.422,4052,94.151,3.125,48,https://michael-maltsev.github.io/technion-histograms/00440268/,https://cheesefork.cf/?course=00440268&semester=202401
+74,02360501,מבוא לבינה מלאכותית,201501 to 202402,15,84.202,2671,96.473,3.140,50,https://michael-maltsev.github.io/technion-histograms/02360501/,https://cheesefork.cf/?course=02360501&semester=202401
+75,00340371,פרויקט תכן לייצור,201501 to 202402,17,89.016,1263,98.838,3.167,12,https://michael-maltsev.github.io/technion-histograms/00340371/,https://cheesefork.cf/?course=00340371&semester=202401
+76,02340114,מבוא למדעי המחשב מ',201401 to 202403,31,78.887,6316,90.891,3.171,117,https://michael-maltsev.github.io/technion-histograms/02340114/,https://cheesefork.cf/?course=02340114&semester=202401
+77,01140021,מעבדה לפיסיקה 2מ,201601 to 202403,18,91.893,431,98.587,3.190,21,https://michael-maltsev.github.io/technion-histograms/01140021/,https://cheesefork.cf/?course=01140021&semester=202401
+78,00340022,מבוא למכטרוניקה,201401 to 202401,16,83.274,1508,96.060,3.200,10,https://michael-maltsev.github.io/technion-histograms/00340022/,https://cheesefork.cf/?course=00340022&semester=202401
+79,00960250,מערכות מידע מבוזרות,201502 to 202401,10,80.090,1178,96.994,3.200,30,https://michael-maltsev.github.io/technion-histograms/00960250/,https://cheesefork.cf/?course=00960250&semester=202401
+80,02360781,למידה עמוקה על מאיצים חישוביים,201901 to 202401,11,93.149,1214,99.353,3.207,29,https://michael-maltsev.github.io/technion-histograms/02360781/,https://cheesefork.cf/?course=02360781&semester=202401
+81,03240445,הסתגלות למצבי לחץ,201501 to 202501,21,94.825,1788,99.592,3.214,14,https://michael-maltsev.github.io/technion-histograms/03240445/,https://cheesefork.cf/?course=03240445&semester=202401
+82,01040003,חשבון דיפרנציאלי ואינטגרלי 1,200901 to 202501,23,71.435,5693,84.313,3.219,32,https://michael-maltsev.github.io/technion-histograms/01040003/,https://cheesefork.cf/?course=01040003&semester=202401
+83,01040214,טורי פורייה והתמרות אינטגרליות,200901 to 202402,9,73.947,2259,86.412,3.222,45,https://michael-maltsev.github.io/technion-histograms/01040214/,https://cheesefork.cf/?course=01040214&semester=202401
+84,02360703,תכנות מונחה עצמים,201602 to 202401,17,78.037,1138,94.165,3.231,26,https://michael-maltsev.github.io/technion-histograms/02360703/,https://cheesefork.cf/?course=02360703&semester=202401
+85,03240442,משפט העבודה בישראל,201402 to 202402,21,92.207,1997,99.237,3.231,26,https://michael-maltsev.github.io/technion-histograms/03240442/,https://cheesefork.cf/?course=03240442&semester=202401
+86,00460202,עיבוד וניתוח מידע,201901 to 202501,7,79.869,505,96.202,3.238,21,https://michael-maltsev.github.io/technion-histograms/00460202/,https://cheesefork.cf/?course=00460202&semester=202401
+87,02360334,מבוא לרשתות מחשבים,201502 to 202402,17,80.159,1389,93.941,3.241,29,https://michael-maltsev.github.io/technion-histograms/02360334/,https://cheesefork.cf/?course=02360334&semester=202401
+88,00940314,מודלים סטוכסטיים בחקר בצועים,201402 to 202501,18,74.130,1982,90.948,3.250,36,https://michael-maltsev.github.io/technion-histograms/00940314/,https://cheesefork.cf/?course=00940314&semester=202401
+89,03340011,יסודות תכן ביו,202001 to 202401,8,80.330,404,96.035,3.250,12,https://michael-maltsev.github.io/technion-histograms/03340011/,https://cheesefork.cf/?course=03340011&semester=202401
+90,01040041,חשבון דיפרנציאלי ואינטגרלי 1מ1,202201 to 202501,4,68.180,2127,75.544,3.255,106,https://michael-maltsev.github.io/technion-histograms/01040041/,https://cheesefork.cf/?course=01040041&semester=202401
+91,00440214,טכניקות קליטה ושידור,201501 to 202401,8,80.271,170,95.353,3.273,11,https://michael-maltsev.github.io/technion-histograms/00440214/,https://cheesefork.cf/?course=00440214&semester=202401
+92,00940513,מאקרו כלכלה,201601 to 202201,7,79.411,343,95.265,3.273,11,https://michael-maltsev.github.io/technion-histograms/00940513/,https://cheesefork.cf/?course=00940513&semester=202401
+93,01240911,מעבדה כימיה אורגנית 1,201402 to 202402,13,90.652,815,99.569,3.273,11,https://michael-maltsev.github.io/technion-histograms/01240911/,https://cheesefork.cf/?course=01240911&semester=202401
+94,02340141,קומבינטוריקה למדעי המחשב,201401 to 202403,30,72.136,6520,85.130,3.286,98,https://michael-maltsev.github.io/technion-histograms/02340141/,https://cheesefork.cf/?course=02340141&semester=202401
+95,00440140,שדות אלקטרומגנטיים,201001 to 202402,27,72.138,3141,86.434,3.294,34,https://michael-maltsev.github.io/technion-histograms/00440140/,https://cheesefork.cf/?course=00440140&semester=202401
+96,00460332,מערכות ראיה ושמיעה,201502 to 202402,19,81.794,1808,96.812,3.294,17,https://michael-maltsev.github.io/technion-histograms/00460332/,https://cheesefork.cf/?course=00460332&semester=202401
+97,00640522,מבוא להנדסת ביוטכנולוגיה ומזון,201501 to 202501,11,90.600,801,99.605,3.300,20,https://michael-maltsev.github.io/technion-histograms/00640522/,https://cheesefork.cf/?course=00640522&semester=202401
+98,01040065,אלגברה 1מ2,202301 to 202501,3,69.139,1274,77.351,3.306,49,https://michael-maltsev.github.io/technion-histograms/01040065/,https://cheesefork.cf/?course=01040065&semester=202401
+99,00460746,אלגוריתמים ויישומים בראייה ממוחשבת,201202 to 202402,14,84.400,981,97.179,3.318,22,https://michael-maltsev.github.io/technion-histograms/00460746/,https://cheesefork.cf/?course=00460746&semester=202401
+100,00460267,מבנה מחשבים,201302 to 202501,22,77.842,2569,91.728,3.324,37,https://michael-maltsev.github.io/technion-histograms/00460267/,https://cheesefork.cf/?course=00460267&semester=202401
+101,00340040,מבוא לבקרה,201401 to 202501,18,75.603,1777,86.971,3.333,24,https://michael-maltsev.github.io/technion-histograms/00340040/,https://cheesefork.cf/?course=00340040&semester=202401
+102,01040034,מבוא להסתברות ח',200302 to 202501,42,71.196,9883,81.882,3.348,66,https://michael-maltsev.github.io/technion-histograms/01040034/,https://cheesefork.cf/?course=01040034&semester=202401
+103,01240503,כימיה פיסיקלית 1ב',201201 to 202401,12,79.389,2362,96.918,3.348,23,https://michael-maltsev.github.io/technion-histograms/01240503/,https://cheesefork.cf/?course=01240503&semester=202401
+104,01040032,חשבון אינפיניטסימלי 2מ',201501 to 202402,20,69.719,5192,81.140,3.353,136,https://michael-maltsev.github.io/technion-histograms/01040032/,https://cheesefork.cf/?course=01040032&semester=202401
+105,00440102,בטיחות במעבדות חשמל,202501 to 202501,1,0.000,869,97.000,3.362,47,https://michael-maltsev.github.io/technion-histograms/00440102/,https://cheesefork.cf/?course=00440102&semester=202401
+106,02360379,קידוד ואלגוריתמים לזכרונות,202001 to 202401,4,93.222,115,91.496,3.364,11,https://michael-maltsev.github.io/technion-histograms/02360379/,https://cheesefork.cf/?course=02360379&semester=202401
+107,03240284,חינוך בסין ובישראל,201801 to 202501,13,93.503,731,98.814,3.364,22,https://michael-maltsev.github.io/technion-histograms/03240284/,https://cheesefork.cf/?course=03240284&semester=202401
+108,01040033,אנליזה וקטורית,201601 to 202402,19,71.014,1637,82.448,3.375,16,https://michael-maltsev.github.io/technion-histograms/01040033/,https://cheesefork.cf/?course=01040033&semester=202401
+109,00340010,דינמיקה,201202 to 202402,18,71.734,1942,86.320,3.381,21,https://michael-maltsev.github.io/technion-histograms/00340010/,https://cheesefork.cf/?course=00340010&semester=202401
+110,01250001,כימיה כללית,200801 to 202501,30,71.695,14838,83.882,3.398,113,https://michael-maltsev.github.io/technion-histograms/01250001/,https://cheesefork.cf/?course=01250001&semester=202401
+111,00140214,יסודות מכניקת הזורמים,201501 to 202401,13,75.876,786,93.384,3.400,15,https://michael-maltsev.github.io/technion-histograms/00140214/,https://cheesefork.cf/?course=00140214&semester=202401
+112,00460237,מעגלים משולבים,200302 to 202402,19,79.589,1303,97.430,3.400,25,https://michael-maltsev.github.io/technion-histograms/00460237/,https://cheesefork.cf/?course=00460237&semester=202401
+113,01040002,מושגי יסוד במתמטיקה,201901 to 202402,11,75.334,619,81.000,3.400,25,https://michael-maltsev.github.io/technion-histograms/01040002/,https://cheesefork.cf/?course=01040002&semester=202401
+114,03150052,קינטיקת טרנספורמציות בחומרים,201601 to 202401,9,75.532,454,94.251,3.400,10,https://michael-maltsev.github.io/technion-histograms/03150052/,https://cheesefork.cf/?course=03150052&semester=202401
+115,00940312,מודלים דטרמיניסטים בחקר ביצועים,202301 to 202501,3,69.961,325,81.403,3.417,24,https://michael-maltsev.github.io/technion-histograms/00940312/,https://cheesefork.cf/?course=00940312&semester=202401
+116,02340292,לוגיקה למדעי המחשב,201802 to 202402,13,73.069,3391,80.382,3.417,72,https://michael-maltsev.github.io/technion-histograms/02340292/,https://cheesefork.cf/?course=02340292&semester=202401
+117,00840738,תורת הבקרה,201601 to 202501,11,82.652,792,96.366,3.429,14,https://michael-maltsev.github.io/technion-histograms/00840738/,https://cheesefork.cf/?course=00840738&semester=202401
+118,01040135,משוואות דפרנציאליות רגילות ת',200702 to 202402,28,75.585,4544,88.237,3.429,28,https://michael-maltsev.github.io/technion-histograms/01040135/,https://cheesefork.cf/?course=01040135&semester=202401
+119,01240708,כימיה אורגנית מורחב 1,201402 to 202501,19,77.346,742,86.654,3.429,14,https://michael-maltsev.github.io/technion-histograms/01240708/,https://cheesefork.cf/?course=01240708&semester=202401
+120,02360342,מבוא לאימות תוכנה,201701 to 202401,8,79.499,680,92.885,3.429,14,https://michael-maltsev.github.io/technion-histograms/02360342/,https://cheesefork.cf/?course=02360342&semester=202401
+121,00940101,מבוא להנדסת תעשיה וניהול,201502 to 202401,13,79.825,725,97.001,3.438,16,https://michael-maltsev.github.io/technion-histograms/00940101/,https://cheesefork.cf/?course=00940101&semester=202401
+122,03240262,תולדות הפילוסופיה והמדע בעת החדשה,202201 to 202401,4,92.780,235,97.472,3.438,16,https://michael-maltsev.github.io/technion-histograms/03240262/,https://cheesefork.cf/?course=03240262&semester=202401
+123,00140104,תורת החוזק 1,201401 to 202501,24,67.941,2298,84.940,3.448,29,https://michael-maltsev.github.io/technion-histograms/00140104/,https://cheesefork.cf/?course=00140104&semester=202401
+124,03240032,אנגלית למתקדמים א',202102 to 202402,6,85.201,533,97.071,3.455,11,https://michael-maltsev.github.io/technion-histograms/03240032/,https://cheesefork.cf/?course=03240032&semester=202401
+125,01040012,חשבון דיפרנציאלי ואינטגרלי 1ת',200602 to 202501,22,62.566,9217,70.214,3.462,78,https://michael-maltsev.github.io/technion-histograms/01040012/,https://cheesefork.cf/?course=01040012&semester=202401
+126,03340274,מבוא לאנטומיה של האדם,202101 to 202401,4,83.573,474,97.922,3.462,13,https://michael-maltsev.github.io/technion-histograms/03340274/,https://cheesefork.cf/?course=03340274&semester=202401
+127,03940807,חינוך גופני: כושר גופני מעורב,202001 to 202501,5,95.514,1353,98.390,3.467,15,https://michael-maltsev.github.io/technion-histograms/03940807/,https://cheesefork.cf/?course=03940807&semester=202401
+128,01340113,מסלולים מטבולים,201101 to 202501,12,78.321,2326,93.373,3.472,36,https://michael-maltsev.github.io/technion-histograms/01340113/,https://cheesefork.cf/?course=01340113&semester=202401
+129,00460002,תכן וניתוח אלגוריתמים,201502 to 202402,16,76.562,826,93.654,3.478,23,https://michael-maltsev.github.io/technion-histograms/00460002/,https://cheesefork.cf/?course=00460002&semester=202401
+130,00440114,מתמטיקה דיסקרטית ח',201602 to 202401,13,76.413,546,94.059,3.500,10,https://michael-maltsev.github.io/technion-histograms/00440114/,https://cheesefork.cf/?course=00440114&semester=202401
+131,01040038,אלגברה 2מ,202201 to 202501,8,75.142,1632,83.756,3.500,44,https://michael-maltsev.github.io/technion-histograms/01040038/,https://cheesefork.cf/?course=01040038&semester=202401
+132,01040291,אלגוריתמים קומבינטוריים,201601 to 202402,9,76.773,276,92.971,3.500,14,https://michael-maltsev.github.io/technion-histograms/01040291/,https://cheesefork.cf/?course=01040291&semester=202401
+133,01160217,פיסיקה של מצב מוצק,201501 to 202501,11,80.062,1079,92.198,3.500,22,https://michael-maltsev.github.io/technion-histograms/01160217/,https://cheesefork.cf/?course=01160217&semester=202401
+134,01270427,מצב מוצק לכימאים (מורחב),201601 to 202301,8,78.771,345,91.574,3.500,10,https://michael-maltsev.github.io/technion-histograms/01270427/,https://cheesefork.cf/?course=01270427&semester=202401
+135,01040031,חשבון אינפיניטסימלי 1מ',201401 to 202501,31,67.403,11697,77.209,3.508,242,https://michael-maltsev.github.io/technion-histograms/01040031/,https://cheesefork.cf/?course=01040031&semester=202401
+136,01040134,אלגברה מודרנית ח,201001 to 202403,35,74.689,7372,85.872,3.515,68,https://michael-maltsev.github.io/technion-histograms/01040134/,https://cheesefork.cf/?course=01040134&semester=202401
+137,01240117,יסודות הכימיה א',201201 to 202501,13,76.046,873,86.576,3.524,21,https://michael-maltsev.github.io/technion-histograms/01240117/,https://cheesefork.cf/?course=01240117&semester=202401
+138,00940219,הנדסת תוכנה,201601 to 202402,16,71.571,1690,85.870,3.526,57,https://michael-maltsev.github.io/technion-histograms/00940219/,https://cheesefork.cf/?course=00940219&semester=202401
+139,01040136,משוואות דיפרנציאליות רגילות מ,202202 to 202501,6,69.063,2050,77.279,3.527,74,https://michael-maltsev.github.io/technion-histograms/01040136/,https://cheesefork.cf/?course=01040136&semester=202401
+140,02340221,מבוא למדעי המחשב נ',201801 to 202401,11,74.583,853,86.217,3.536,28,https://michael-maltsev.github.io/technion-histograms/02340221/,https://cheesefork.cf/?course=02340221&semester=202401
+141,00940170,שיטות בהנדסת תעשיה,201901 to 202401,6,84.845,235,98.787,3.545,11,https://michael-maltsev.github.io/technion-histograms/00940170/,https://cheesefork.cf/?course=00940170&semester=202401
+142,00440137,מעגלים אלקטרוניים,201802 to 202402,13,80.673,2593,93.825,3.548,42,https://michael-maltsev.github.io/technion-histograms/00440137/,https://cheesefork.cf/?course=00440137&semester=202401
+143,00970247,אינטרנט של הדברים: טכנולוגיות,201902 to 202401,5,91.451,381,98.139,3.556,18,https://michael-maltsev.github.io/technion-histograms/00970247/,https://cheesefork.cf/?course=00970247&semester=202401
+144,00960411,למידה חישובית 1,201502 to 202402,15,80.892,1635,97.120,3.559,34,https://michael-maltsev.github.io/technion-histograms/00960411/,https://cheesefork.cf/?course=00960411&semester=202401
+145,03240033,אנגלית טכנית,201401 to 202501,32,85.765,7921,99.346,3.564,94,https://michael-maltsev.github.io/technion-histograms/03240033/,https://cheesefork.cf/?course=03240033&semester=202401
+146,00440127,יסודות התקני מוליכים למחצה,200902 to 202501,15,79.084,3110,91.906,3.566,53,https://michael-maltsev.github.io/technion-histograms/00440127/,https://cheesefork.cf/?course=00440127&semester=202401
+147,00140841,יסודות המיפוי והמדידה 1,201502 to 202302,16,82.984,1498,96.616,3.571,14,https://michael-maltsev.github.io/technion-histograms/00140841/,https://cheesefork.cf/?course=00140841&semester=202401
+148,03140003,מבוא למכניקת המוצקים,201601 to 202401,9,80.533,533,93.704,3.583,12,https://michael-maltsev.github.io/technion-histograms/03140003/,https://cheesefork.cf/?course=03140003&semester=202401
+149,00440158,מעבדה בהנדסת חשמל 1ב,201901 to 202501,17,96.028,1355,99.934,3.588,17,https://michael-maltsev.github.io/technion-histograms/00440158/,https://cheesefork.cf/?course=00440158&semester=202401
+150,00340041,מעבר חום,201501 to 202403,17,77.700,1511,90.037,3.591,22,https://michael-maltsev.github.io/technion-histograms/00340041/,https://cheesefork.cf/?course=00340041&semester=202401
+151,01340019,מבוא לביוכימיה ואנזימולוגיה,201001 to 202402,24,75.711,3720,89.959,3.593,54,https://michael-maltsev.github.io/technion-histograms/01340019/,https://cheesefork.cf/?course=01340019&semester=202401
+152,00440198,מבוא לעבוד ספרתי של אותות,201002 to 202501,24,76.881,3138,93.112,3.600,25,https://michael-maltsev.github.io/technion-histograms/00440198/,https://cheesefork.cf/?course=00440198&semester=202401
+153,00970317,תורת המשחקים השיתופיים,201602 to 202401,8,80.994,310,95.063,3.600,10,https://michael-maltsev.github.io/technion-histograms/00970317/,https://cheesefork.cf/?course=00970317&semester=202401
+154,03340021,מגמות בהנדסה ביו,201301 to 202401,12,90.566,1129,99.885,3.600,15,https://michael-maltsev.github.io/technion-histograms/03340021/,https://cheesefork.cf/?course=03340021&semester=202401
+155,00440191,מערכות בקרה 1,201002 to 202402,19,79.294,1423,93.194,3.611,18,https://michael-maltsev.github.io/technion-histograms/00440191/,https://cheesefork.cf/?course=00440191&semester=202401
+156,00340028,מכניקת מוצקים 1,201102 to 202402,23,68.662,2437,84.852,3.632,38,https://michael-maltsev.github.io/technion-histograms/00340028/,https://cheesefork.cf/?course=00340028&semester=202401
+157,01140075,פיסיקה 2ממ,200902 to 202501,41,74.178,8632,86.375,3.633,79,https://michael-maltsev.github.io/technion-histograms/01140075/,https://cheesefork.cf/?course=01140075&semester=202401
+158,01140077,פיסיקה 1ל,201401 to 202501,24,69.658,1674,83.565,3.636,22,https://michael-maltsev.github.io/technion-histograms/01140077/,https://cheesefork.cf/?course=01140077&semester=202401
+159,02340118,ארגון ותכנות המחשב,201401 to 202402,23,77.879,5329,94.422,3.636,77,https://michael-maltsev.github.io/technion-histograms/02340118/,https://cheesefork.cf/?course=02340118&semester=202401
+160,03240460,מחשבה מדינית יהודית עד העת החדשה,201602 to 202401,4,94.496,205,98.156,3.636,11,https://michael-maltsev.github.io/technion-histograms/03240460/,https://cheesefork.cf/?course=03240460&semester=202401
+161,00940423,מבוא לסטטיסטיקה,201402 to 202403,24,78.474,2467,94.900,3.643,28,https://michael-maltsev.github.io/technion-histograms/00940423/,https://cheesefork.cf/?course=00940423&semester=202401
+162,00440101,מבוא למערכות תכנה,201201 to 202501,23,79.633,2231,92.292,3.647,34,https://michael-maltsev.github.io/technion-histograms/00440101/,https://cheesefork.cf/?course=00440101&semester=202401
+163,00440334,רשתות מחשבים ואינטרנט 1,201202 to 202501,23,77.526,2702,94.323,3.655,29,https://michael-maltsev.github.io/technion-histograms/00440334/,https://cheesefork.cf/?course=00440334&semester=202401
+164,01040293,תורת הקבוצות,202001 to 202501,11,77.989,437,88.736,3.667,18,https://michael-maltsev.github.io/technion-histograms/01040293/,https://cheesefork.cf/?course=01040293&semester=202401
+165,01040220,משוואות דפרנציאליות חלקיות ת',200901 to 202501,9,73.625,2511,81.737,3.677,31,https://michael-maltsev.github.io/technion-histograms/01040220/,https://cheesefork.cf/?course=01040220&semester=202401
+166,02340124,מבוא לתכנות מערכות,201801 to 202402,16,76.322,4715,90.223,3.685,146,https://michael-maltsev.github.io/technion-histograms/02340124/,https://cheesefork.cf/?course=02340124&semester=202401
+167,02340247,אלגוריתמים 1,201402 to 202402,22,72.960,6257,87.432,3.696,69,https://michael-maltsev.github.io/technion-histograms/02340247/,https://cheesefork.cf/?course=02340247&semester=202401
+168,03140533,מבוא להנדסת חומרים מ'1,201402 to 202402,16,80.853,1993,97.464,3.700,20,https://michael-maltsev.github.io/technion-histograms/03140533/,https://cheesefork.cf/?course=03140533&semester=202401
+169,01040166,אלגברה אמ',201501 to 202501,22,69.486,7140,79.535,3.703,158,https://michael-maltsev.github.io/technion-histograms/01040166/,https://cheesefork.cf/?course=01040166&semester=202401
+170,00440148,גלים ומערכות מפולגות,201201 to 202501,35,76.286,3004,92.494,3.704,27,https://michael-maltsev.github.io/technion-histograms/00440148/,https://cheesefork.cf/?course=00440148&semester=202401
+171,03940806,חינוך גופני,200901 to 202501,21,94.673,6288,99.225,3.704,71,https://michael-maltsev.github.io/technion-histograms/03940806/,https://cheesefork.cf/?course=03940806&semester=202401
+172,01040168,אלגברה ב,201902 to 202402,11,68.940,768,77.632,3.708,48,https://michael-maltsev.github.io/technion-histograms/01040168/,https://cheesefork.cf/?course=01040168&semester=202401
+173,01240120,יסודות הכימיה,201201 to 202501,15,75.380,5548,88.706,3.709,55,https://michael-maltsev.github.io/technion-histograms/01240120/,https://cheesefork.cf/?course=01240120&semester=202401
+174,00960570,תורת המשחקים והתנהגות כלכלית,201302 to 202501,19,76.498,1582,90.342,3.714,35,https://michael-maltsev.github.io/technion-histograms/00960570/,https://cheesefork.cf/?course=00960570&semester=202401
+175,03240292,משפט שוויון וצדק חברתי,201401 to 202501,22,94.005,2124,99.256,3.714,14,https://michael-maltsev.github.io/technion-histograms/03240292/,https://cheesefork.cf/?course=03240292&semester=202401
+176,00460195,מערכות לומדות,201401 to 202402,20,79.155,2886,95.295,3.722,36,https://michael-maltsev.github.io/technion-histograms/00460195/,https://cheesefork.cf/?course=00460195&semester=202401
+177,03940803,חינוך גופני,201401 to 202501,22,94.227,11541,99.360,3.727,55,https://michael-maltsev.github.io/technion-histograms/03940803/,https://cheesefork.cf/?course=03940803&semester=202401
+178,00840213,תרמודינמיקה,201501 to 202401,11,81.288,781,96.303,3.741,27,https://michael-maltsev.github.io/technion-histograms/00840213/,https://cheesefork.cf/?course=00840213&semester=202401
+179,01140071,פיסיקה 1מ,200502 to 202501,45,72.896,17794,85.379,3.741,201,https://michael-maltsev.github.io/technion-histograms/01140071/,https://cheesefork.cf/?course=01140071&semester=202401
+180,00440131,אותות ומערכות,201801 to 202501,16,80.602,3738,93.749,3.744,78,https://michael-maltsev.github.io/technion-histograms/00440131/,https://cheesefork.cf/?course=00440131&semester=202401
+181,00940241,ניהול מסדי נתונים,201602 to 202402,16,77.794,1733,93.380,3.766,47,https://michael-maltsev.github.io/technion-histograms/00940241/,https://cheesefork.cf/?course=00940241&semester=202401
+182,00140004,נתוח מערכות,201601 to 202401,16,77.306,1698,92.703,3.769,13,https://michael-maltsev.github.io/technion-histograms/00140004/,https://cheesefork.cf/?course=00140004&semester=202401
+183,00840314,זרימה צמיגה ומעבר חום,201502 to 202401,10,77.541,691,94.096,3.769,13,https://michael-maltsev.github.io/technion-histograms/00840314/,https://cheesefork.cf/?course=00840314&semester=202401
+184,00940481,מבוא להסתברות וסטטיסטיקה,201402 to 202501,28,78.881,3470,92.399,3.778,27,https://michael-maltsev.github.io/technion-histograms/00940481/,https://cheesefork.cf/?course=00940481&semester=202401
+185,02340218,מבני נתונים 1,201401 to 202402,24,75.357,6590,89.328,3.779,154,https://michael-maltsev.github.io/technion-histograms/02340218/,https://cheesefork.cf/?course=02340218&semester=202401
+186,01040013,חשבון דיפרנציאלי ואינטגרלי 2ת',201101 to 202402,32,71.688,10325,83.150,3.780,123,https://michael-maltsev.github.io/technion-histograms/01040013/,https://cheesefork.cf/?course=01040013&semester=202401
+187,01040131,משוואות דיפרנציאליות רגילות/ח,201001 to 202501,36,74.693,11007,86.632,3.789,71,https://michael-maltsev.github.io/technion-histograms/01040131/,https://cheesefork.cf/?course=01040131&semester=202401
+188,01140073,פיזיקה קוונטית להנדסה,201202 to 202402,25,77.492,4066,91.108,3.792,48,https://michael-maltsev.github.io/technion-histograms/01140073/,https://cheesefork.cf/?course=01140073&semester=202401
+189,00140149,מבני בטון 2,201601 to 202401,9,69.822,1092,86.484,3.800,10,https://michael-maltsev.github.io/technion-histograms/00140149/,https://cheesefork.cf/?course=00140149&semester=202401
+190,00560391,חיישנים מבוססי ננו,201502 to 202401,10,94.522,1371,99.673,3.800,10,https://michael-maltsev.github.io/technion-histograms/00560391/,https://cheesefork.cf/?course=00560391&semester=202401
+191,02360343,תורת החישוביות,201502 to 202402,19,71.400,4354,84.342,3.814,70,https://michael-maltsev.github.io/technion-histograms/02360343/,https://cheesefork.cf/?course=02360343&semester=202401
+192,01140052,פיסיקה 2,201001 to 202501,36,74.931,11834,87.757,3.817,115,https://michael-maltsev.github.io/technion-histograms/01140052/,https://cheesefork.cf/?course=01140052&semester=202401
+193,00640212,טכנולוגיה של מזון,201601 to 202401,9,80.072,681,97.507,3.818,11,https://michael-maltsev.github.io/technion-histograms/00640212/,https://cheesefork.cf/?course=00640212&semester=202401
+194,02340129,"מב.לתורת הקבוצות ואוטומטים למדמ""ח",201801 to 202402,14,77.590,4402,86.761,3.822,135,https://michael-maltsev.github.io/technion-histograms/02340129/,https://cheesefork.cf/?course=02340129&semester=202401
+195,01040016,אלגברה 1/מורחב,200601 to 202402,33,71.612,16568,85.119,3.837,147,https://michael-maltsev.github.io/technion-histograms/01040016/,https://cheesefork.cf/?course=01040016&semester=202401
+196,00140102,מבוא למכניקה הנדסית,202301 to 202402,4,58.255,515,60.623,3.846,13,https://michael-maltsev.github.io/technion-histograms/00140102/,https://cheesefork.cf/?course=00140102&semester=202401
+197,00940222,הנדסת מערכות מבוססת מודלים,201501 to 202401,13,90.221,1164,100.000,3.850,20,https://michael-maltsev.github.io/technion-histograms/00940222/,https://cheesefork.cf/?course=00940222&semester=202401
+198,00340055,תורת הזרימה 1מ',202201 to 202402,5,81.845,430,92.051,3.867,15,https://michael-maltsev.github.io/technion-histograms/00340055/,https://cheesefork.cf/?course=00340055&semester=202401
+199,01040158,מבוא לחבורות,202001 to 202402,10,77.106,520,84.548,3.870,23,https://michael-maltsev.github.io/technion-histograms/01040158/,https://cheesefork.cf/?course=01040158&semester=202401
+200,01340058,ביולוגיה 1,200802 to 202501,36,81.028,11623,92.100,3.870,146,https://michael-maltsev.github.io/technion-histograms/01340058/,https://cheesefork.cf/?course=01340058&semester=202401
+201,02340125,אלגוריתמים נומריים,201701 to 202402,16,77.717,4462,90.429,3.902,92,https://michael-maltsev.github.io/technion-histograms/02340125/,https://cheesefork.cf/?course=02340125&semester=202401
+202,01040122,תורת הפונקציות 1,201502 to 202501,19,78.310,809,86.901,3.909,22,https://michael-maltsev.github.io/technion-histograms/01040122/,https://cheesefork.cf/?course=01040122&semester=202401
+203,02360491,תכנות מאובטח,202101 to 202401,4,80.965,214,92.888,3.909,11,https://michael-maltsev.github.io/technion-histograms/02360491/,https://cheesefork.cf/?course=02360491&semester=202401
+204,03240630,איטלקית למתחילים 1,201502 to 202501,19,89.946,509,98.794,3.909,11,https://michael-maltsev.github.io/technion-histograms/03240630/,https://cheesefork.cf/?course=03240630&semester=202401
+205,00140006,מבוא לשיטות נומריות,201502 to 202402,16,75.442,1993,93.395,3.929,14,https://michael-maltsev.github.io/technion-histograms/00140006/,https://cheesefork.cf/?course=00140006&semester=202401
+206,01040222,תורת ההסתברות,201202 to 202501,20,75.361,952,86.628,3.931,29,https://michael-maltsev.github.io/technion-histograms/01040222/,https://cheesefork.cf/?course=01040222&semester=202401
+207,03140006,אפיון מבנה והרכב חומרים,201601 to 202501,10,80.820,518,93.779,3.933,15,https://michael-maltsev.github.io/technion-histograms/03140006/,https://cheesefork.cf/?course=03140006&semester=202401
+208,00440139,ממירי מתח ממותגים,201901 to 202501,7,82.196,667,92.369,3.950,20,https://michael-maltsev.github.io/technion-histograms/00440139/,https://cheesefork.cf/?course=00440139&semester=202401
+209,01040066,אלגברה א',202101 to 202501,9,67.326,703,70.509,3.952,42,https://michael-maltsev.github.io/technion-histograms/01040066/,https://cheesefork.cf/?course=01040066&semester=202401
+210,00460200,עבוד ונתוח תמונות,200401 to 202402,23,78.725,2553,95.412,3.962,26,https://michael-maltsev.github.io/technion-histograms/00460200/,https://cheesefork.cf/?course=00460200&semester=202401
+211,00440252,מערכות ספרתיות ומבנה המחשב,201702 to 202501,21,79.275,7141,89.244,3.988,169,https://michael-maltsev.github.io/technion-histograms/00440252/,https://cheesefork.cf/?course=00440252&semester=202401
+212,00940591,מבוא לכלכלה,201101 to 202402,34,80.418,8154,92.131,3.989,87,https://michael-maltsev.github.io/technion-histograms/00940591/,https://cheesefork.cf/?course=00940591&semester=202401
+213,00140003,סטטיסטיקה,201401 to 202501,23,78.506,2722,94.885,4.000,13,https://michael-maltsev.github.io/technion-histograms/00140003/,https://cheesefork.cf/?course=00140003&semester=202401
+214,00140008,מידע גרפי הנדסי,201201 to 202402,22,79.212,2661,94.061,4.000,35,https://michael-maltsev.github.io/technion-histograms/00140008/,https://cheesefork.cf/?course=00140008&semester=202401
+215,00340035,תרמודינמיקה 1,201401 to 202401,18,72.332,1975,86.211,4.000,35,https://michael-maltsev.github.io/technion-histograms/00340035/,https://cheesefork.cf/?course=00340035&semester=202401
+216,01040142,מבוא למרחבים מטריים וטופולוגיים,201202 to 202402,20,73.413,826,84.520,4.000,31,https://michael-maltsev.github.io/technion-histograms/01040142/,https://cheesefork.cf/?course=01040142&semester=202401
+217,00340053,מכניקת מוצקים 2מ,202201 to 202402,6,66.776,472,80.281,4.040,25,https://michael-maltsev.github.io/technion-histograms/00340053/,https://cheesefork.cf/?course=00340053&semester=202401
+218,01040019,אלגברה ליניארית מ',201401 to 202501,23,73.400,7687,87.892,4.047,128,https://michael-maltsev.github.io/technion-histograms/01040019/,https://cheesefork.cf/?course=01040019&semester=202401
+219,02360350,הגנה ברשתות,201501 to 202402,18,78.454,2505,93.717,4.047,43,https://michael-maltsev.github.io/technion-histograms/02360350/,https://cheesefork.cf/?course=02360350&semester=202401
+220,01140020,מעבדה לפיסיקה 1מ',201002 to 202501,23,93.828,1960,99.699,4.050,40,https://michael-maltsev.github.io/technion-histograms/01140020/,https://cheesefork.cf/?course=01140020&semester=202401
+221,03940800,חינוך גופני,201401 to 202402,21,94.322,5847,99.516,4.062,16,https://michael-maltsev.github.io/technion-histograms/03940800/,https://cheesefork.cf/?course=03940800&semester=202401
+222,00440157,מעבדה בהנדסת חשמל 1א,201801 to 202501,21,96.038,2595,99.392,4.065,31,https://michael-maltsev.github.io/technion-histograms/00440157/,https://cheesefork.cf/?course=00440157&semester=202401
+223,03940802,חינוך גופני,201401 to 202501,22,94.469,6707,99.174,4.071,42,https://michael-maltsev.github.io/technion-histograms/03940802/,https://cheesefork.cf/?course=03940802&semester=202401
+224,00940424,סטטיסטיקה 1,202101 to 202501,11,76.838,939,93.904,4.073,41,https://michael-maltsev.github.io/technion-histograms/00940424/,https://cheesefork.cf/?course=00940424&semester=202401
+225,01040286,קומבינטוריקה,201202 to 202402,23,70.748,891,82.749,4.083,24,https://michael-maltsev.github.io/technion-histograms/01040286/,https://cheesefork.cf/?course=01040286&semester=202401
+226,01140074,פיסיקה 1פ',201101 to 202501,15,69.724,2715,78.508,4.097,93,https://michael-maltsev.github.io/technion-histograms/01140074/,https://cheesefork.cf/?course=01140074&semester=202401
+227,00960600,התנהגות ארגונית,201601 to 202401,11,83.709,894,97.925,4.100,10,https://michael-maltsev.github.io/technion-histograms/00960600/,https://cheesefork.cf/?course=00960600&semester=202401
+228,03340009,מכניקת זורמים ביולוגיים,202201 to 202501,4,83.681,417,90.576,4.100,10,https://michael-maltsev.github.io/technion-histograms/03340009/,https://cheesefork.cf/?course=03340009&semester=202401
+229,03940801,חינוך גופני,201401 to 202501,22,94.530,8741,99.652,4.106,47,https://michael-maltsev.github.io/technion-histograms/03940801/,https://cheesefork.cf/?course=03940801&semester=202401
+230,00840312,"זרימה דחיסה, כונסים ונחירים",201502 to 202501,12,74.836,829,90.215,4.118,17,https://michael-maltsev.github.io/technion-histograms/00840312/,https://cheesefork.cf/?course=00840312&semester=202401
+231,01140051,פיסיקה 1,200602 to 202501,38,75.511,12043,89.160,4.121,198,https://michael-maltsev.github.io/technion-histograms/01140051/,https://cheesefork.cf/?course=01140051&semester=202401
+232,01040195,חשבון אינפיניטסימלי 1,200502 to 202501,28,68.569,1890,76.762,4.145,69,https://michael-maltsev.github.io/technion-histograms/01040195/,https://cheesefork.cf/?course=01040195&semester=202401
+233,01140101,מכניקה אנליטית,200901 to 202401,13,78.654,1625,95.058,4.147,34,https://michael-maltsev.github.io/technion-histograms/01140101/,https://cheesefork.cf/?course=01140101&semester=202401
+234,03240439,יסודות באמנות יפן,201503 to 202401,8,93.455,484,100.000,4.150,20,https://michael-maltsev.github.io/technion-histograms/03240439/,https://cheesefork.cf/?course=03240439&semester=202401
+235,03940805,חינוך גופני,200902 to 202501,24,95.657,8546,99.348,4.160,25,https://michael-maltsev.github.io/technion-histograms/03940805/,https://cheesefork.cf/?course=03940805&semester=202401
+236,00440105,תורת המעגלים החשמליים,201201 to 202402,26,78.894,6953,88.750,4.163,92,https://michael-maltsev.github.io/technion-histograms/00440105/,https://cheesefork.cf/?course=00440105&semester=202401
+237,01240305,כימיה אי,201601 to 202401,10,87.459,431,95.309,4.167,18,https://michael-maltsev.github.io/technion-histograms/01240305/,https://cheesefork.cf/?course=01240305&semester=202401
+238,01140248,פיסיקה 1 ר,201501 to 202501,10,89.424,1066,98.237,4.182,11,https://michael-maltsev.github.io/technion-histograms/01140248/,https://cheesefork.cf/?course=01140248&semester=202401
+239,00940569,שוק ההון וההשקעות,201602 to 202401,8,86.733,526,98.441,4.200,10,https://michael-maltsev.github.io/technion-histograms/00940569/,https://cheesefork.cf/?course=00940569&semester=202401
+240,03260009,תיאוריות אנתרופולוגיות,202302 to 202402,3,91.613,185,99.459,4.200,10,https://michael-maltsev.github.io/technion-histograms/03260009/,https://cheesefork.cf/?course=03260009&semester=202401
+241,01040174,אלגברה במ',201601 to 202402,18,72.014,1231,82.584,4.240,25,https://michael-maltsev.github.io/technion-histograms/01040174/,https://cheesefork.cf/?course=01040174&semester=202401
+242,00840220,מכניקת הטיס 1,201502 to 202401,10,80.510,691,92.755,4.250,12,https://michael-maltsev.github.io/technion-histograms/00840220/,https://cheesefork.cf/?course=00840220&semester=202401
+243,00640523,מבוא לביוטכנולוגיה מולקולרית,201601 to 202501,10,78.620,773,88.158,4.273,11,https://michael-maltsev.github.io/technion-histograms/00640523/,https://cheesefork.cf/?course=00640523&semester=202401
+244,01150204,פיסיקה קוונטית 2,200902 to 202401,13,79.730,1495,91.509,4.281,32,https://michael-maltsev.github.io/technion-histograms/01150204/,https://cheesefork.cf/?course=01150204&semester=202401
+245,03940820,חינוך גופני,200901 to 202501,22,95.068,4363,99.617,4.286,42,https://michael-maltsev.github.io/technion-histograms/03940820/,https://cheesefork.cf/?course=03940820&semester=202401
+246,00450002,מבט,202201 to 202401,3,93.909,508,98.894,4.303,33,https://michael-maltsev.github.io/technion-histograms/00450002/,https://cheesefork.cf/?course=00450002&semester=202401
+247,02140120,יסודות למידה והוראה,201901 to 202402,12,99.603,1067,99.668,4.318,22,https://michael-maltsev.github.io/technion-histograms/02140120/,https://cheesefork.cf/?course=02140120&semester=202401
+248,00460243,טכנולוגיות קוונטיות,201901 to 202402,11,85.126,325,94.932,4.333,18,https://michael-maltsev.github.io/technion-histograms/00460243/,https://cheesefork.cf/?course=00460243&semester=202401
+249,01040064,אלגברה 1מ1,202301 to 202501,3,75.781,1632,87.484,4.340,50,https://michael-maltsev.github.io/technion-histograms/01040064/,https://cheesefork.cf/?course=01040064&semester=202401
+250,01040281,חשבון אינפי 2,201201 to 202402,23,72.370,1397,81.722,4.373,51,https://michael-maltsev.github.io/technion-histograms/01040281/,https://cheesefork.cf/?course=01040281&semester=202401
+251,00140618,מבוא לניהול ובטיחות בבנייה,201901 to 202402,7,81.608,1110,98.532,4.375,16,https://michael-maltsev.github.io/technion-histograms/00140618/,https://cheesefork.cf/?course=00140618&semester=202401
+252,00460042,מבוא למערכות הספק ורשת חכמה,201701 to 202401,8,87.678,692,96.301,4.400,10,https://michael-maltsev.github.io/technion-histograms/00460042/,https://cheesefork.cf/?course=00460042&semester=202401
+253,03940808,חינוך גופני,201401 to 202501,22,94.123,3174,99.587,4.400,40,https://michael-maltsev.github.io/technion-histograms/03940808/,https://cheesefork.cf/?course=03940808&semester=202401
+254,01340082,ביולוגיה מולקולרית,201101 to 202401,11,81.238,728,96.852,4.417,12,https://michael-maltsev.github.io/technion-histograms/01340082/,https://cheesefork.cf/?course=01340082&semester=202401
+255,03940804,חינוך גופני,201401 to 202501,21,94.717,6002,99.775,4.467,30,https://michael-maltsev.github.io/technion-histograms/03940804/,https://cheesefork.cf/?course=03940804&semester=202401
+256,03240299,"טרור, ג'יהד ותגובה מדינית",201902 to 202501,8,91.615,314,99.368,4.500,12,https://michael-maltsev.github.io/technion-histograms/03240299/,https://cheesefork.cf/?course=03240299&semester=202401
+257,01140054,פיסיקה 3,201401 to 202501,32,85.271,6241,96.274,4.524,63,https://michael-maltsev.github.io/technion-histograms/01140054/,https://cheesefork.cf/?course=01140054&semester=202401
+258,03240692,סינית למתחילים,201402 to 202501,19,97.066,496,99.181,4.700,10,https://michael-maltsev.github.io/technion-histograms/03240692/,https://cheesefork.cf/?course=03240692&semester=202401
+259,03240600,גרמנית 1,201502 to 202501,16,94.294,759,99.605,4.714,14,https://michael-maltsev.github.io/technion-histograms/03240600/,https://cheesefork.cf/?course=03240600&semester=202401
+260,00450001,פרויקט מבוא בהנדסת חשמל ומחשבים,201401 to 202501,17,96.015,736,100.000,4.727,11,https://michael-maltsev.github.io/technion-histograms/00450001/,https://cheesefork.cf/?course=00450001&semester=202401
+261,00350026,מבוא יצירתי להנדסת מכונות,201301 to 202501,15,92.039,660,99.705,4.769,13,https://michael-maltsev.github.io/technion-histograms/00350026/,https://cheesefork.cf/?course=00350026&semester=202401
+262,03240261,אחריות מקצועית:דילמות חוק ואתיקה,201902 to 202403,7,97.779,369,93.805,4.786,14,https://michael-maltsev.github.io/technion-histograms/03240261/,https://cheesefork.cf/?course=03240261&semester=202401
+263,03240432,פסיכולוגיה של המוזיקה,201501 to 202501,11,97.788,547,99.817,4.923,13,https://michael-maltsev.github.io/technion-histograms/03240432/,https://cheesefork.cf/?course=03240432&semester=202401
+264,03240298,"מן התנ""ך ועד למשפט הישראלי החדשני",201402 to 202501,20,97.914,1258,99.752,5.000,12,https://michael-maltsev.github.io/technion-histograms/03240298/,https://cheesefork.cf/?course=03240298&semester=202401
