@@ -196,6 +196,7 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [semInput, setSemInput] = useState("");
   const [semStatus, setSemStatus] = useState(null);
+  const [semesterOptions, setSemesterOptions] = useState([]);
   const [minPts, setMinPts] = useState(9);
   const [maxPts, setMaxPts] = useState(12);
   const [planStep, setPlanStep] = useState("semester"); // semester | must | slider | results
@@ -274,7 +275,14 @@ export default function App() {
       });
       return next;
     });
-    flash(`✓ Saved ${selected.size} courses from transcript`);
+    // Auto-block exemption courses (no points) so they won't be recommended
+    const exemptIds = parsed
+      .filter(c => c.gradeStr && c.gradeStr.toLowerCase().includes("exemption without"))
+      .map(c => c.cid);
+    if (exemptIds.length > 0) {
+      setBlockIds(prev => [...new Set([...prev, ...exemptIds])]);
+    }
+    flash(`✓ Saved ${selected.size} courses from transcript${exemptIds.length > 0 ? ` · ${exemptIds.length} exemptions auto-blocked` : ""}`);
     setView("home");
   };
 
@@ -340,27 +348,27 @@ export default function App() {
   const V = {
     wrap: { minHeight: "100vh", background: "#080a0c", color: "#d8d4cc", fontFamily: "'IBM Plex Mono', monospace" },
     header: { borderBottom: "1px solid #151a20", padding: "16px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#080a0c", position: "sticky", top: 0, zIndex: 10 },
-    logo: { fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: "#3a4050" },
+    logo: { fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: "#5a6575" },
     logoAccent: { color: "#c8b560" },
     pill: { background: "#111418", border: "1px solid #1e2530", borderRadius: 4, padding: "3px 12px", fontSize: 11, color: "#4a5060", letterSpacing: "0.06em" },
     main: { maxWidth: 820, margin: "0 auto", padding: "48px 24px 80px" },
     h1: { fontSize: 26, fontWeight: 400, letterSpacing: "-0.02em", color: "#e8e4da", marginBottom: 6, fontFamily: "'IBM Plex Sans', sans-serif" },
-    sub: { fontSize: 12, color: "#3a4050", marginBottom: 40, letterSpacing: "0.04em" },
+    sub: { fontSize: 12, color: "#5a6575", marginBottom: 40, letterSpacing: "0.04em" },
     grid2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 36 },
     card: { background: "#0c0e12", border: "1px solid #181c24", borderRadius: 8, padding: "22px 24px" },
     cardLabel: { fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "#c8b560", marginBottom: 8 },
-    cardDesc: { fontSize: 12, color: "#3a4050", lineHeight: 1.7 },
+    cardDesc: { fontSize: 12, color: "#5a6575", lineHeight: 1.7 },
     section: { background: "#0c0e12", border: "1px solid #181c24", borderRadius: 8, padding: "24px", marginBottom: 20 },
-    secTitle: { fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "#3a4050", marginBottom: 16 },
+    secTitle: { fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "#5a6575", marginBottom: 16 },
     table: { width: "100%", borderCollapse: "collapse" },
-    th: { fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "#2a3040", padding: "6px 10px", textAlign: "left", borderBottom: "1px solid #141820" },
+    th: { fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "#4a5565", padding: "6px 10px", textAlign: "left", borderBottom: "1px solid #141820" },
     td: { padding: "9px 10px", fontSize: 12, borderBottom: "1px solid #0f1318", verticalAlign: "middle" },
     dropzone: { border: "1.5px dashed #1e2530", borderRadius: 8, padding: "52px 24px", textAlign: "center", cursor: "pointer", transition: "border-color .15s, background .15s" },
     dropActive: { borderColor: "#c8b560", background: "#0f1108" },
     btnPrimary: { background: "#c8b560", color: "#080a0c", border: "none", borderRadius: 4, padding: "10px 22px", fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, letterSpacing: "0.06em", cursor: "pointer" },
-    btnGhost: { background: "transparent", color: "#3a4050", border: "1px solid #1e2530", borderRadius: 4, padding: "10px 22px", fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", cursor: "pointer", transition: "all .15s" },
+    btnGhost: { background: "transparent", color: "#5a6575", border: "1px solid #1e2530", borderRadius: 4, padding: "10px 22px", fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", cursor: "pointer", transition: "all .15s" },
     input: { background: "#080a0c", border: "1px solid #1e2530", borderRadius: 4, padding: "9px 12px", fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", color: "#d8d4cc", width: "100%", transition: "border-color .15s" },
-    back: { fontSize: 11, color: "#3a4050", cursor: "pointer", letterSpacing: "0.08em", marginBottom: 32, display: "inline-flex", alignItems: "center", gap: 6, transition: "color .12s" },
+    back: { fontSize: 11, color: "#5a6575", cursor: "pointer", letterSpacing: "0.08em", marginBottom: 32, display: "inline-flex", alignItems: "center", gap: 6, transition: "color .12s" },
     err: { background: "#160b0b", border: "1px solid #3a1414", borderRadius: 4, padding: "10px 14px", fontSize: 12, color: "#c46b6b", marginBottom: 16 },
     toast: { position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: "#c8b560", color: "#080a0c", padding: "9px 22px", borderRadius: 4, fontSize: 12, fontWeight: 600, letterSpacing: "0.06em", zIndex: 999 },
   };
@@ -408,7 +416,7 @@ export default function App() {
                       <td style={{ ...V.td, color: "#7a8090", maxWidth: 240 }}>{c.name}</td>
                       <td style={{ ...V.td, color: "#4a5060" }}>{c.credits ?? "—"}</td>
                       <td style={V.td}><GradePill g={c.gradeStr} /></td>
-                      <td style={{ ...V.td, color: "#3a4050", fontSize: 11 }}>{c.semester}</td>
+                      <td style={{ ...V.td, color: "#5a6575", fontSize: 11 }}>{c.semester}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -427,8 +435,8 @@ export default function App() {
                   <tbody>
                     {failedC.map((c) => (
                       <tr key={c.cid} style={V.td}>
-                        <td style={{ ...V.td, color: "#3a4050" }}>{c.cid}</td>
-                        <td style={{ ...V.td, color: "#2a3040" }}>{c.name}</td>
+                        <td style={{ ...V.td, color: "#5a6575" }}>{c.cid}</td>
+                        <td style={{ ...V.td, color: "#4a5565" }}>{c.name}</td>
                         <td style={V.td}><GradePill g={c.gradeStr} /></td>
                       </tr>
                     ))}
@@ -475,7 +483,7 @@ export default function App() {
                 <input ref={fileRef} type="file" accept=".pdf" style={{ display: "none" }}
                   onChange={(e) => handleFile(e.target.files[0])} />
                 {loading ? (
-                  <div style={{ color: "#3a4050", fontSize: 13 }}>
+                  <div style={{ color: "#5a6575", fontSize: 13 }}>
                     <div style={{ fontSize: 28, marginBottom: 12, opacity: 0.4 }}>⟳</div>
                     Parsing PDF...
                   </div>
@@ -483,7 +491,7 @@ export default function App() {
                   <>
                     <div style={{ fontSize: 36, marginBottom: 14, opacity: 0.25 }}>↑</div>
                     <div style={{ fontSize: 13, color: "#4a5060" }}>Drop PDF here or click to browse</div>
-                    <div style={{ fontSize: 11, color: "#2a3040", marginTop: 8, letterSpacing: "0.06em" }}>
+                    <div style={{ fontSize: 11, color: "#4a5565", marginTop: 8, letterSpacing: "0.06em" }}>
                       TECHNION TRANSCRIPT · תדפיס ציונים
                     </div>
                   </>
@@ -565,7 +573,7 @@ export default function App() {
                       </tr>
                     ))}
                     {filtered.length === 0 && (
-                      <tr><td colSpan={5} style={{ ...V.td, color: "#2a3040", textAlign: "center", padding: "24px" }}>no courses match</td></tr>
+                      <tr><td colSpan={5} style={{ ...V.td, color: "#4a5565", textAlign: "center", padding: "24px" }}>no courses match</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -671,6 +679,7 @@ export default function App() {
       setView("home");
       setErr("");
       setSemStatus(null);
+      setSemesterOptions([]);
       setPlanStep("semester");
       setMustIds([]);
       setMustInput("");
@@ -691,52 +700,63 @@ export default function App() {
     };
 
     // ── Step: semester ──────────────────────────────────────────────────────
-    if (planStep === "semester") return (
-      <div style={V.wrap}>
-        <style>{css}</style>
-        <div style={V.header}>
-          <span style={V.logo}>TECHNION <span style={V.logoAccent}>TRACKER</span></span>
-          <span style={V.pill}>{takenCount} courses saved</span>
-        </div>
-        <div style={V.main}>
-          <div className="fade-up">
-            <span style={V.back} onClick={goBack}>← back</span>
-            <div style={V.h1}>Plan next semester</div>
-            <div style={V.sub}>Step 1 of 3 — select semester</div>
-            {err && <div style={V.err}>{err}</div>}
-            <div style={V.section}>
-              <div style={{ ...V.secTitle, marginBottom: 8 }}>Semester code</div>
-              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                <input style={{ ...V.input, width: 180 }} placeholder="e.g. 202502"
-                  value={semInput} autoComplete="off"
-                  onChange={e => { setSemInput(e.target.value); setSemStatus(null); }}
-                  onKeyDown={e => e.key === "Enter" && checkSemester()} />
-                <button className="btn-primary" style={V.btnPrimary} onClick={checkSemester}>Check →</button>
-                {semInput.length === 6 && <span style={{ fontSize: 12, color: "#4a5060" }}>{semLabel(semInput)}</span>}
-              </div>
-              {semStatus === "checking" && <div style={{ marginTop: 16, fontSize: 12, color: "#3a4050" }}>Checking...</div>}
-              {semStatus === "not_ready" && (
-                <div style={{ marginTop: 16, padding: "12px 16px", background: "#0f0e08", border: "1px solid #3a3010", borderRadius: 6 }}>
-                  <div style={{ fontSize: 13, color: "#8a7a30" }}>⏳ No data for {semInput} yet — run update_latest.py first</div>
-                </div>
-              )}
-              {semStatus === "ready" && (
-                <div style={{ marginTop: 16 }}>
-                  <div style={{ padding: "10px 14px", background: "#080f08", border: "1px solid #1a3a1a", borderRadius: 6, fontSize: 12, color: "#4a8a4a", marginBottom: 16 }}>
-                    ✓ Data available for {semLabel(semInput)}
+    if (planStep === "semester") {
+      if (semesterOptions.length === 0 && semStatus !== "loading_list") {
+        setSemStatus("loading_list");
+        fetch("http://localhost:5000/api/semesters")
+          .then(r => r.json())
+          .then(data => {
+            setSemesterOptions(data.semesters || []);
+            if (data.semesters && data.semesters.length > 0) setSemInput(data.semesters[0].code);
+            setSemStatus(null);
+          })
+          .catch(() => setSemStatus(null));
+      }
+      return (
+        <div style={V.wrap}>
+          <style>{css}</style>
+          <div style={V.header}>
+            <span style={V.logo}>TECHNION <span style={V.logoAccent}>TRACKER</span></span>
+            <span style={V.pill}>{takenCount} courses saved</span>
+          </div>
+          <div style={V.main}>
+            <div className="fade-up">
+              <span style={V.back} onClick={goBack}>← back</span>
+              <div style={V.h1}>Plan next semester</div>
+              <div style={V.sub}>Step 1 of 3 — select semester</div>
+              {err && <div style={V.err}>{err}</div>}
+              <div style={V.section}>
+                <div style={{ ...V.secTitle, marginBottom: 12 }}>Semester</div>
+                {semStatus === "loading_list" ? (
+                  <div style={{ fontSize: 12, color: "#5a6575" }}>Loading semesters...</div>
+                ) : semesterOptions.length > 0 ? (
+                  <>
+                    <select value={semInput} onChange={e => setSemInput(e.target.value)}
+                      style={{ ...V.input, width: 260, cursor: "pointer", paddingRight: 36, appearance: "none", WebkitAppearance: "none" }}>
+                      {semesterOptions.map(s => (
+                        <option key={s.code} value={s.code} style={{ background: "#0c0e12", color: "#c8b560" }}>{s.label}</option>
+                      ))}
+                    </select>
+                    <div style={{ marginTop: 20 }}>
+                      <button className="btn-primary" style={V.btnPrimary}
+                        onClick={() => { setPlanStep("must"); setErr(""); }}>
+                        Next: add required courses →
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ padding: "12px 16px", background: "#0f0e08", border: "1px solid #3a3010", borderRadius: 6 }}>
+                    <div style={{ fontSize: 13, color: "#8a7a30" }}>⏳ No semester data found — run update_latest.py first</div>
                   </div>
-                  <button className="btn-primary" style={V.btnPrimary} onClick={() => { setPlanStep("must"); setErr(""); }}>
-                    Next: add required courses →
-                  </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    );
+      );
+    }
 
-    // ── Step: must-take ─────────────────────────────────────────────────────
+        // ── Step: must-take ─────────────────────────────────────────────────────
     if (planStep === "must") return (
       <div style={V.wrap}>
         <style>{css}</style>
@@ -749,6 +769,7 @@ export default function App() {
             <span style={V.back} onClick={() => { setPlanStep("semester"); setErr(""); }}>← back</span>
             <div style={V.h1}>Required courses</div>
             <div style={V.sub}>Step 2 of 3 — add courses you must take this semester (optional)</div>
+              <div style={{ fontSize: 11, color: "#3a5040", marginTop: 6, marginBottom: 4 }}>💡 Have an exemption for a course like אנגלית טכנית? Add it to the <span style={{color:"#c8b560"}}>exclude list</span> below so it won't be recommended</div>
             {err && <div style={V.err}>{err}</div>}
 
             <div style={V.section}>
@@ -792,7 +813,7 @@ export default function App() {
                   </div>
                 </>
               ) : (
-                <div style={{ fontSize: 12, color: "#2a3040", padding: "16px 0" }}>
+                <div style={{ fontSize: 12, color: "#4a5565", padding: "16px 0" }}>
                   No required courses added — skip to set your point range
                 </div>
               )}
@@ -800,7 +821,7 @@ export default function App() {
 
               <div style={{ marginTop: 28 }}>
                 <div style={{ ...V.secTitle, marginBottom: 8 }}>Courses to exclude</div>
-                <div style={{ fontSize: 11, color: "#2a3040", marginBottom: 10 }}>
+                <div style={{ fontSize: 11, color: "#4a5565", marginBottom: 10 }}>
                   Full, no interest, or any other reason — the recommender will skip these
                 </div>
                 <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
@@ -866,36 +887,36 @@ export default function App() {
 
                 <div style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 16 }}>
                   <div style={{ textAlign: "center", minWidth: 48 }}>
-                    <div style={{ fontSize: 10, color: "#3a4050", marginBottom: 6, letterSpacing: "0.08em" }}>MIN</div>
+                    <div style={{ fontSize: 10, color: "#5a6575", marginBottom: 6, letterSpacing: "0.08em" }}>MIN</div>
                     <div style={{ fontSize: 32, color: "#c8b560", fontWeight: 500 }}>{effectiveMin}</div>
-                    {mustPts > 0 && <div style={{ fontSize: 10, color: "#3a4050" }}>+{remaining(effectiveMin)} free</div>}
+                    {mustPts > 0 && <div style={{ fontSize: 10, color: "#5a6575" }}>+{remaining(effectiveMin)} free</div>}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <input type="range" min={mustPts} max={22} step={0.5}
+                    <input type="range" min={mustPts} max={30} step={0.5}
                       value={effectiveMin}
                       onChange={e => { const v = parseFloat(e.target.value); if (v <= effectiveMax) setMinPts(v); }}
                       style={{ width: "100%", accentColor: "#c8b560", cursor: "pointer" }} />
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#2a3040", marginTop: 2 }}>
-                      <span>{mustPts || 3}</span><span>22</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#4a5565", marginTop: 2 }}>
+                      <span>{mustPts || 3}</span><span>30</span>
                     </div>
                   </div>
                   <div style={{ textAlign: "center", minWidth: 48 }}>
-                    <div style={{ fontSize: 10, color: "#3a4050", marginBottom: 6, letterSpacing: "0.08em" }}>MAX</div>
+                    <div style={{ fontSize: 10, color: "#5a6575", marginBottom: 6, letterSpacing: "0.08em" }}>MAX</div>
                     <div style={{ fontSize: 32, color: "#c8b560", fontWeight: 500 }}>{effectiveMax}</div>
-                    {mustPts > 0 && <div style={{ fontSize: 10, color: "#3a4050" }}>+{remaining(effectiveMax)} free</div>}
+                    {mustPts > 0 && <div style={{ fontSize: 10, color: "#5a6575" }}>+{remaining(effectiveMax)} free</div>}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <input type="range" min={mustPts} max={22} step={0.5}
+                    <input type="range" min={mustPts} max={30} step={0.5}
                       value={effectiveMax}
                       onChange={e => { const v = parseFloat(e.target.value); if (v >= effectiveMin) setMaxPts(v); }}
                       style={{ width: "100%", accentColor: "#c8b560", cursor: "pointer" }} />
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#2a3040", marginTop: 2 }}>
-                      <span>{mustPts || 3}</span><span>22</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#4a5565", marginTop: 2 }}>
+                      <span>{mustPts || 3}</span><span>30</span>
                     </div>
                   </div>
                 </div>
 
-                <div style={{ fontSize: 12, color: "#3a4050", marginBottom: 24 }}>
+                <div style={{ fontSize: 12, color: "#5a6575", marginBottom: 24 }}>
                   Planning <span style={{ color: "#c8b560" }}>{effectiveMin} – {effectiveMax} pts</span> for {semLabel(semInput)}
                   {mustPts > 0 && <span style={{ color: "#5a5040" }}> ({mustPts} required + {remaining(effectiveMin)}–{remaining(effectiveMax)} elective)</span>}
                 </div>
@@ -916,7 +937,7 @@ export default function App() {
                         }} />
                       ))}
                     </div>
-                    <div style={{ fontSize: 11, color: "#3a4050" }}>Checking prerequisites · optimizing combinations</div>
+                    <div style={{ fontSize: 11, color: "#5a6575" }}>Checking prerequisites · optimizing combinations</div>
                   </div>
                 ) : (
                   <button className="btn-primary" style={V.btnPrimary} onClick={findSchedule}>
@@ -966,15 +987,15 @@ export default function App() {
 
                     {/* Stat pills */}
                     <div style={{ flex:"0 0 72px", textAlign:"center", borderRight:"1px solid #1e2530", paddingRight:16, marginRight:16 }}>
-                      <div style={{ fontSize:10, color:"#3a4050", letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:4 }}>pts</div>
+                      <div style={{ fontSize:10, color:"#5a6575", letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:4 }}>pts</div>
                       <div style={{ fontSize:24, color:"#c8b560", fontWeight:600, lineHeight:1 }}>{opt.total_credits}</div>
                     </div>
                     <div style={{ flex:"0 0 60px", textAlign:"center", borderRight:"1px solid #1e2530", paddingRight:16, marginRight:16 }}>
-                      <div style={{ fontSize:10, color:"#3a4050", letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:4 }}>courses</div>
+                      <div style={{ fontSize:10, color:"#5a6575", letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:4 }}>courses</div>
                       <div style={{ fontSize:24, color:"#c8b560", fontWeight:600, lineHeight:1 }}>{opt.n_courses}</div>
                     </div>
                     <div style={{ flex:"0 0 72px", textAlign:"center", borderRight:"1px solid #1e2530", paddingRight:16, marginRight:16 }}>
-                      <div style={{ fontSize:10, color:"#3a4050", letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:4 }}>avg</div>
+                      <div style={{ fontSize:10, color:"#5a6575", letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:4 }}>avg</div>
                       <div style={{ fontSize:24, fontWeight:600, lineHeight:1,
                                     color: opt.weighted_grade>=85?"#6bc47a":opt.weighted_grade>=70?"#c8b560":"#c46b6b" }}>
                         {opt.weighted_grade > 0 ? opt.weighted_grade.toFixed(1) : "—"}
@@ -991,7 +1012,7 @@ export default function App() {
                         </span>
                       ))}
                     </div>
-                    <div style={{ color:"#3a4050", fontSize:14, paddingLeft:12 }}>&#x2192;</div>
+                    <div style={{ color:"#5a6575", fontSize:14, paddingLeft:12 }}>&#x2192;</div>
                   </div>
                 ))}
               </div>
@@ -1018,17 +1039,17 @@ export default function App() {
               <div style={V.sub}>{semLabel(semInput)}</div>
               <div style={{ display: "flex", gap: 20, marginBottom: 28, flexWrap: "wrap" }}>
                 <div style={{ background: "#0c0e12", border: "1px solid #181c24", borderRadius: 8, padding: "14px 24px", textAlign: "center" }}>
-                  <div style={{ fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "#3a4050", marginBottom: 6 }}>Total credits</div>
+                  <div style={{ fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "#5a6575", marginBottom: 6 }}>Total credits</div>
                   <div style={{ fontSize: 28, color: "#c8b560", fontWeight: 500 }}>{recommendation.total_credits}</div>
                 </div>
                 <div style={{ background: "#0c0e12", border: "1px solid #181c24", borderRadius: 8, padding: "14px 24px", textAlign: "center" }}>
-                  <div style={{ fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "#3a4050", marginBottom: 6 }}>Est. weighted avg</div>
+                  <div style={{ fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "#5a6575", marginBottom: 6 }}>Est. weighted avg</div>
                   <div style={{ fontSize: 28, fontWeight: 500, color: recommendation.weighted_grade >= 85 ? "#6bc47a" : recommendation.weighted_grade >= 70 ? "#c8b560" : "#c46b6b" }}>
                     {recommendation.weighted_grade > 0 ? recommendation.weighted_grade.toFixed(1) : "—"}
                   </div>
                 </div>
                 <div style={{ background: "#0c0e12", border: "1px solid #181c24", borderRadius: 8, padding: "14px 24px", textAlign: "center" }}>
-                  <div style={{ fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "#3a4050", marginBottom: 6 }}>Courses</div>
+                  <div style={{ fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "#5a6575", marginBottom: 6 }}>Courses</div>
                   <div style={{ fontSize: 28, color: "#c8b560", fontWeight: 500 }}>{recommendation.courses.length}</div>
                 </div>
               </div>
@@ -1052,7 +1073,7 @@ export default function App() {
                           <span style={{ color: catColor(c.category), fontSize: 11 }} className="he">{c.category}</span>
                         </td>
                         <td style={{ ...V.td, color: "#4a5060" }}>{c.credits}</td>
-                        <td style={{ ...V.td, color: c.grade ? "#6bc47a" : "#3a4050" }}>
+                        <td style={{ ...V.td, color: c.grade ? "#6bc47a" : "#5a6575" }}>
                           {c.grade ? c.grade.toFixed(1) : "—"}
                         </td>
                         <td style={{ ...V.td }}>
@@ -1149,7 +1170,7 @@ export default function App() {
 
           {dbLoading && (
             <div style={{ ...V.section, borderColor: "#1e2530", marginBottom: 20 }}>
-              <div style={{ fontSize: 12, color: "#3a4050" }}>Loading course database...</div>
+              <div style={{ fontSize: 12, color: "#5a6575" }}>Loading course database...</div>
             </div>
           )}
           {!dbLoading && Object.keys(coursesDb).length === 0 && (
@@ -1209,7 +1230,7 @@ export default function App() {
                   ))}
                   {!search && takenCount > 20 && (
                     <tr>
-                      <td colSpan={5} style={{ ...V.td, color: "#2a3040", textAlign: "center", padding: 16, cursor: "pointer" }}
+                      <td colSpan={5} style={{ ...V.td, color: "#4a5565", textAlign: "center", padding: 16, cursor: "pointer" }}
                         onClick={() => { setSearch(""); setView("manual"); }}>
                         + {takenCount - 20} more — view all →
                       </td>

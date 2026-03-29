@@ -11,6 +11,16 @@ LABELED_CSV = os.path.join(OUTPUT_DIR, "courses_labeled.csv")
 app = Flask(__name__)
 CORS(app)
 
+# Courses that are typically exempted — won't be recommended by default
+# Users can still add them manually if needed
+COMMON_EXEMPTIONS = {
+    "03240033",  # אנגלית טכנית
+    "03240053",  # עברית
+    "01030015",  # מתמטיקה מקדמית
+    "01130013",  # פיסיקה מקדמית 1
+    "01130014",  # פיסיקה מקדמית 2
+}
+
 def load_courses():
     courses = {}
     if not os.path.exists(LABELED_CSV):
@@ -132,6 +142,7 @@ def recommend(available_ids, taken_ids, target_pts, must_ids=None, block_ids=Non
     for cid in available_ids:
         if cid in passed_ids: continue   # already passed — skip
         if cid in block_ids: continue    # user blocked it
+        if cid in COMMON_EXEMPTIONS and cid not in must_ids: continue  # typically exempted
         c = COURSES_DB.get(cid)
         if not c or c["credits"] == 0: continue
         if not prereqs_met(c, assumed): continue
@@ -187,6 +198,22 @@ def fmt_schedule(schedule, must_ids):
             "must":     c["id"] in set(must_ids),
         } for c in sorted(schedule, key=lambda x: (course_priority(x), -x["grade"]))]
     }
+
+@app.route("/api/semesters")
+def api_semesters():
+    """Return all semester JSONs found on disk, sorted newest first."""
+    jsons = sorted(glob.glob(os.path.join(OUTPUT_DIR, "semester_*.json")), reverse=True)
+    result = []
+    for path in jsons:
+        code = os.path.basename(path).replace("semester_","").replace(".json","")
+        if not re.match(r"^\d{6}$", code): continue
+        y, t = code[:4], code[4:]
+        if t == "01":   label = f"Winter {y}-{int(y)+1}"
+        elif t == "02": label = f"Spring {int(y)+1}"
+        elif t == "03": label = f"Summer {int(y)+1}"
+        else:           label = code
+        result.append({"code": code, "label": label})
+    return jsonify({"semesters": result})
 
 @app.route("/api/available")
 def api_available():
