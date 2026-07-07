@@ -1,10 +1,12 @@
-"""
+﻿"""
 scrape_malag.py
 Scrapes מלג courses from Technion portal (all pages of the table),
 appends to courses_labeled.csv with category=מלג.
 """
 import asyncio, csv, os, re
 from playwright.async_api import async_playwright
+
+from scraper_common import discover_semesters, scrape_cf_course
 
 OUTPUT_DIR  = "C:/Users/pc/OneDrive - Technion/Desktop/cheesefork_scraper"
 LABELED_CSV = os.path.join(OUTPUT_DIR, "courses_labeled.csv")
@@ -46,58 +48,6 @@ async def scrape_table_page(container):
         name_en = texts[2] if len(texts) > 2 else ""
         courses.append((cid, name_he, name_en))
     return courses
-
-async def scrape(page, course_id):
-    for sem in ("202502", "202501", "202403", "202402", "202401", "202303", "202302", "202301"):
-        try:
-            await page.goto(f"{BASE}?course={course_id}&semester={sem}",
-                            wait_until="domcontentloaded", timeout=30000)
-            try: await page.wait_for_selector("text=נקודות", timeout=3000)
-            except: pass
-            try: await page.wait_for_load_state("networkidle", timeout=3000)
-            except: pass
-
-            title = await page.title()
-            if course_id.lstrip("0") not in title and course_id not in title:
-                continue
-
-            name = ""
-            m = re.match(r"^\s*[\d\s]*-\s*(.+?)\s*-", title)
-            if m: name = m.group(1).strip()
-
-            body_text = await page.inner_text("body")
-
-            # Credits
-            cm = re.search(r"\u05e0\u05e7\u05d5\u05d3\u05d5\u05ea[^:]*:\s*(\d+(?:\.\d+)?)", body_text)
-            credits = float(cm.group(1)) if cm and float(cm.group(1)) <= 20 else None
-
-            # Prerequisites
-            prereq_str = ""
-            pm = re.search(
-                r"\u05de\u05e7\u05e6\u05d5\u05e2\u05d5\u05ea \u05e7\u05d3\u05dd[:\s]+([\d\u05d0\u05d5\u05d5 \(\)-]+)",
-                body_text
-            )
-            if pm:
-                raw = pm.group(1).strip()
-                raw = re.sub(r"\u05d5-", "\u05d5 ", raw)
-                raw = re.sub(r"\u05d0\u05d5-", "\u05d0\u05d5 ", raw)
-                raw = raw.replace("(", "").replace(")", "")
-                parts = []
-                for t in raw.split():
-                    t = t.strip().rstrip("-")
-                    if re.match(r"^\d{6,8}$", t):
-                        parts.append(t.zfill(8))
-                    elif t == "\u05d0\u05d5":
-                        parts.append("OR")
-                    elif t == "\u05d5":
-                        parts.append("AND")
-                prereq_str = " ".join(parts)
-
-            if credits is not None or name:
-                return name, credits, prereq_str
-        except:
-            continue
-    return "", None, ""
 
 async def get_malag_courses(page):
     print(f"Loading portal...")
@@ -219,11 +169,12 @@ async def main():
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         page2   = await (await browser.new_context()).new_page()
+        semester_fallback = list(reversed(await discover_semesters(page2)))
         for i, (cid, name_he, name_en) in enumerate(unique_courses, 1):
             ex = agg.get(cid, {})
             name = ex.get("course_name", "") or name_he
             print(f"  [{i}/{len(unique_courses)}] {cid}", end="  ")
-            name_scraped, credits, prereqs = await scrape(page2, cid)
+            name_scraped, credits, prereqs = await scrape_cf_course(page2, cid, semester_fallback)
             if not name: name = name_scraped or name_he
             final_credits = credits if credits is not None else 2
             print(f"credits={final_credits}  prereqs={prereqs or '-'}  {name[:30]}")

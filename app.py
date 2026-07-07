@@ -208,9 +208,9 @@ def api_semesters():
         code = os.path.basename(path).replace("semester_","").replace(".json","")
         if not re.match(r"^\d{6}$", code): continue
         y, t = code[:4], code[4:]
-        if t == "01":   label = f"Winter {y}-{int(y)+1}"
-        elif t == "02": label = f"Spring {int(y)+1}"
-        elif t == "03": label = f"Summer {int(y)+1}"
+        if t == "01":   label = f"Winter {y[2:]}"
+        elif t == "02": label = f"Spring {str(int(y)+1)[2:]}"
+        elif t == "03": label = f"Summer {str(int(y)+1)[2:]}"
         else:           label = code
         result.append({"code": code, "label": label})
     return jsonify({"semesters": result})

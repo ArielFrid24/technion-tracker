@@ -603,9 +603,9 @@ export default function App() {
     const semLabel = (s) => {
       if (!s || s.length < 6) return s;
       const y = s.slice(0, 4), t = s.slice(4);
-      if (t === "01") return `Winter ${y}-${parseInt(y)+1}`;
-      if (t === "02") return `Spring ${parseInt(y)+1}`;
-      if (t === "03") return `Summer ${parseInt(y)+1}`;
+      if (t === "01") return `Winter ${y.slice(2)}`;
+      if (t === "02") return `Spring ${String(parseInt(y)+1).slice(2)}`;
+      if (t === "03") return `Summer ${String(parseInt(y)+1).slice(2)}`;
       return s;
     };
 

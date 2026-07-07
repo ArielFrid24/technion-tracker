@@ -3,23 +3,38 @@ update_all.py
 Master update pipeline — run this whenever a new semester opens or grades are released.
 
 What it does:
-  1. Scrape latest semester course list from CheeseFork  (update_latest.py logic)
-  2. Pull any new grade data from histogram site         (update_grades.py logic)
-  3. Refresh CheeseFork ratings for all labeled courses  (patch_rating.py logic)
+  1. Scrape ALL new semester course lists from CheeseFork (not just the latest)
+  2. Pull any new grade data from histogram site
+  3. Refresh CheeseFork ratings for all labeled courses
   4. Recompute aggregated CSV from per-semester data
-  5. Copy updated courses_labeled.csv to ui/public/
+  5. Scrape מלג courses (all semester panels on the ugportal accordion)
+  6. Scrape בחירה חופשית courses
+  7. Copy updated courses_labeled.csv to ui/public/
 
 Usage:
     python update_all.py              # full update
     python update_all.py --skip-sem   # skip semester scrape (already have JSON)
     python update_all.py --skip-grades # skip grade scrape
     python update_all.py --skip-ratings # skip rating refresh
+    python update_all.py --skip-malag # skip מלג scrape
+    python update_all.py --skip-free  # skip בחירה חופשית scrape
     python update_all.py --dry-run    # show what would change, don't write
 """
 
-import asyncio, csv, json, os, re, sys, shutil, time
+import csv, glob, json, os, re, sys, shutil, time
 from datetime import datetime
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeout
+
+# Force line-buffered stdout so progress is visible immediately even when
+# redirected to a file/log (Python fully buffers non-tty stdout by default,
+# which otherwise makes a long-running scrape look hung until it exits).
+sys.stdout.reconfigure(line_buffering=True)
+
+from scraper_common import (
+    CF_BASE, HIST_BASE, CF_API_KEY, CF_PROJECT,
+    sem_to_label, discover_semesters, fetch_hist_all_semesters,
+    scrape_cf_course, run_pooled,
+)
 
 OUTPUT_DIR   = os.path.dirname(os.path.abspath(__file__))
 PER_SEM_CSV  = os.path.join(OUTPUT_DIR, "courses_per_semester_all.csv")
@@ -27,10 +42,7 @@ AGG_CSV      = os.path.join(OUTPUT_DIR, "courses_aggregated_all.csv")
 LABELED_CSV  = os.path.join(OUTPUT_DIR, "courses_labeled.csv")
 UI_PUBLIC    = os.path.join(OUTPUT_DIR, "ui", "public", "courses_labeled.csv")
 
-CF_BASE      = "https://cheesefork.cf/"
-HIST_BASE    = "https://michael-maltsev.github.io/technion-histograms"
-CF_API_KEY   = "AIzaSyAfKPyTM83mkLgdQTdx9YS9UXywiswwIYI"
-CF_PROJECT   = "cheesefork-de9af"
+PORTAL_URL   = "https://ugportal.technion.ac.il/הוראה-ובחינות/לימודי-העשרה/"
 
 SKIP_SEM     = "--skip-sem"     in sys.argv
 SKIP_GRADES  = "--skip-grades"  in sys.argv
@@ -43,13 +55,6 @@ def log(msg, color=""):
     colors = {"green": "\033[92m", "yellow": "\033[93m", "red": "\033[91m", "blue": "\033[94m", "": ""}
     reset = "\033[0m" if color else ""
     print(f"{colors[color]}[{datetime.now().strftime('%H:%M:%S')}] {msg}{reset}")
-
-def sem_to_label(sem):
-    y, s = int(sem[:4]), sem[4:]
-    if s == "01": return f"חורף {y}-{y+1}"
-    if s == "02": return f"אביב {y+1}"
-    if s == "03": return f"קיץ {y+1}"
-    return sem
 
 # ── CSV helpers ────────────────────────────────────────────────────────────────
 def load_per_sem():
@@ -119,108 +124,82 @@ def recompute_agg_for(course_id, per_sem, existing_agg):
         "cf_url":           base.get("cf_url",""),
     }
 
-# ── STEP 1: Scrape latest semester ────────────────────────────────────────────
+# ── STEP 1: Scrape new semesters ──────────────────────────────────────────────
 async def step_semester(browser):
-    log("STEP 1: Checking for new semester on CheeseFork", "blue")
+    """
+    Discover every semester CheeseFork knows about and backfill any that are
+    newer than the latest semester_<code>.json we already have on disk.
+    Previously this only ever scraped the single newest semester (max(sems))
+    — if two new semesters opened at once (e.g. a skipped summer + the
+    following winter), the older of the two would never get scraped on any
+    future run either, since it would never be "latest" again.
+
+    Deliberately bounded to "newer than what we already have," not "every
+    semester CheeseFork has ever listed" — historical semesters going back to
+    2017 were never scraped on purpose (the app only needs current/upcoming
+    ones), so a naive "backfill every missing code" would dump ~25 pointless
+    historical semester_*.json files into the app's semester dropdown.
+    """
+    log("STEP 1: Checking for new semesters on CheeseFork", "blue")
     page = await (await browser.new_context()).new_page()
 
-    await page.goto(CF_BASE, wait_until="domcontentloaded", timeout=60000)
-    try: await page.wait_for_load_state("networkidle", timeout=10000)
-    except PlaywrightTimeout: pass
-
-    html = await page.content()
-    sems = [s for s in set(re.findall(r'\b(20\d{4})\b', html)) if s[4:] in ("01","02","03")]
-    if not sems:
+    all_sems = await discover_semesters(page)
+    if not all_sems:
         log("  Could not find semester codes", "red")
-        await page.close(); return None
+        await page.close(); return []
 
-    latest = max(sems)
-    out_path = os.path.join(OUTPUT_DIR, f"semester_{latest}.json")
+    existing_codes = sorted(
+        os.path.basename(p).replace("semester_", "").replace(".json", "")
+        for p in glob.glob(os.path.join(OUTPUT_DIR, "semester_*.json"))
+    )
+    latest_known = existing_codes[-1] if existing_codes else None
 
-    if os.path.exists(out_path):
-        with open(out_path, encoding="utf-8") as f:
-            existing = json.load(f)
-        log(f"  semester_{latest}.json already exists ({len(existing['courses'])} courses) — skipping", "yellow")
-        await page.close(); return latest
+    missing = [
+        s for s in all_sems
+        if not os.path.exists(os.path.join(OUTPUT_DIR, f"semester_{s}.json"))
+        and (latest_known is None or s > latest_known)
+    ]
+    if not missing:
+        log(f"  No new semesters newer than {latest_known} — nothing to backfill", "yellow")
+        await page.close(); return all_sems
 
-    log(f"  New semester found: {latest} — scraping course list...")
-    url = f"{CF_BASE}?course=all&semester={latest}"
-    await page.goto(url, wait_until="domcontentloaded", timeout=60000)
-    try: await page.wait_for_load_state("networkidle", timeout=10000)
-    except PlaywrightTimeout: pass
+    log(f"  Found {len(missing)} new semester(s) to scrape: {missing}", "green")
 
-    html  = await page.content()
-    hrefs = await page.eval_on_selector_all("a[href]", "els => els.map(e=>e.getAttribute('href')).filter(Boolean)")
-    codes = set(re.findall(r"[?&]course=(\d{6,8})\b", html + "\n".join(hrefs)))
-    codes = sorted({c.zfill(8) for c in codes})
+    for sem in missing:
+        url = f"{CF_BASE}?course=all&semester={sem}"
+        await page.goto(url, wait_until="domcontentloaded", timeout=60000)
+        try: await page.wait_for_load_state("networkidle", timeout=10000)
+        except PlaywrightTimeout: pass
 
-    if not DRY_RUN:
-        with open(out_path, "w", encoding="utf-8") as f:
-            json.dump({"semester": latest, "courses": codes}, f, ensure_ascii=False, indent=2)
-    log(f"  Saved {len(codes)} courses for semester {latest}", "green")
-    await page.close(); return latest
+        html  = await page.content()
+        hrefs = await page.eval_on_selector_all("a[href]", "els => els.map(e=>e.getAttribute('href')).filter(Boolean)")
+        codes = set(re.findall(r"[?&]course=(\d{6,8})\b", html + "\n".join(hrefs)))
+        codes = sorted({c.zfill(8) for c in codes})
 
-# ── STEP 2: Update grades ──────────────────────────────────────────────────────
-def _parse_finals_table(window):
-    tb = re.search(r"<tbody>(.*?)</tbody>", window, re.DOTALL | re.IGNORECASE)
-    if not tb: return None
-    cells = [re.sub(r"<[^>]+>","",c).strip()
-             for c in re.findall(r"<td[^>]*>(.*?)</td>", tb.group(1), re.DOTALL|re.IGNORECASE)]
-    if len(cells) < 6: return None
-    try:
-        students = int(cells[0])
-        pf = re.match(r"(\d+)/(\d+)", cells[1])
-        avg = float(cells[5])
-        if not (0 < students <= 10000 and 0 <= avg <= 100): return None
-        return {
-            "students": students,
-            "pass_n":   int(pf.group(1)) if pf else None,
-            "fail_n":   int(pf.group(2)) if pf else None,
-            "pass_pct": float(cells[2]) if len(cells) > 2 else None,
-            "min_grade":float(cells[3]) if len(cells) > 3 else None,
-            "max_grade":float(cells[4]) if len(cells) > 4 else None,
-            "avg_grade":avg,
-            "median_grade": float(cells[6]) if len(cells) > 6 else None,
-        }
-    except: return None
+        out_path = os.path.join(OUTPUT_DIR, f"semester_{sem}.json")
+        if not DRY_RUN:
+            with open(out_path, "w", encoding="utf-8") as f:
+                json.dump({"semester": sem, "courses": codes}, f, ensure_ascii=False, indent=2)
+            log(f"  {sem}: saved {len(codes)} courses", "green")
+        else:
+            log(f"  {sem}: would save {len(codes)} courses (dry run)", "green")
 
-def _extract_finals(html, sem):
-    m = re.search(rf'id="{re.escape(sem)}-Finals?"', html, re.IGNORECASE)
-    if m:
-        r = _parse_finals_table(html[m.start():m.start()+2000])
-        if r: return r
-    parts = []
-    for m in re.finditer(rf'id="({re.escape(sem)}-Final_[^"]+)"', html, re.IGNORECASE):
-        r = _parse_finals_table(html[m.start():m.start()+2000])
-        if r: parts.append(r)
-    if not parts: return None
-    total_n = sum(p["students"] for p in parts)
-    pass_total = sum(p["pass_n"] for p in parts if p["pass_n"] is not None)
-    return {
-        "students": total_n, "pass_n": pass_total,
-        "fail_n":   sum(p["fail_n"] for p in parts if p["fail_n"] is not None),
-        "pass_pct": round(100*pass_total/total_n,1) if total_n else None,
-        "min_grade":min(p["min_grade"] for p in parts if p["min_grade"] is not None),
-        "max_grade":max(p["max_grade"] for p in parts if p["max_grade"] is not None),
-        "avg_grade":sum(p["avg_grade"]*p["students"] for p in parts)/total_n,
-        "median_grade": None,
-    }
+    await page.close()
+    return all_sems
 
-async def step_grades(browser, latest_sem):
+# ── STEP 2: Update grades (concurrent) ────────────────────────────────────────
+async def step_grades(browser):
     log("STEP 2: Checking for new grade data", "blue")
 
     per_sem = load_per_sem()
     agg     = load_agg()
     labeled = load_labeled()
 
-    # Check all courses in semester JSONs
-    import glob
     all_jsons = sorted(glob.glob(os.path.join(OUTPUT_DIR, "semester_*.json")))
     all_course_ids = set()
     for path in all_jsons:
         with open(path, encoding="utf-8") as f:
             all_course_ids |= set(json.load(f)["courses"])
-    # Also include already-known courses
     all_course_ids |= {k[0] for k in per_sem.keys()}
 
     need_check = []
@@ -228,32 +207,27 @@ async def step_grades(browser, latest_sem):
         known_sems = {k[1] for k in per_sem if k[0] == cid}
         need_check.append((cid, known_sems))
 
-    log(f"  Checking {len(need_check)} courses for new grades...")
+    log(f"  Checking {len(need_check)} courses for new grades (concurrency=8)...")
 
-    new_rows     = []
-    updated_agg  = set()
-    page = await (await browser.new_context()).new_page()
+    async def worker(page, item):
+        cid, known_sems = item
+        hist = await fetch_hist_all_semesters(page, cid)
+        return cid, known_sems, hist
 
-    for i, (cid, known_sems) in enumerate(need_check, 1):
-        try:
-            await page.goto(f"{HIST_BASE}/{cid}/", wait_until="domcontentloaded", timeout=30000)
-            try: await page.wait_for_selector("text=סופי", timeout=5000)
-            except PlaywrightTimeout: pass
-            await page.wait_for_timeout(500)
-            html = await page.content()
-        except:
-            continue
+    def progress(done, total):
+        if done % 100 == 0 or done == total:
+            log(f"  {done}/{total} courses checked...")
 
-        all_sems_on_page = sorted(set(re.findall(r'id="(\d{6})-[Ff]inal', html)))
-        for sem in all_sems_on_page:
+    results = await run_pooled(browser, need_check, worker, concurrency=8, on_progress=progress)
+
+    new_rows, updated_agg = [], set()
+    for cid, known_sems, hist in results:
+        for sem, r in hist.items():
             if sem in known_sems: continue
-            r = _extract_finals(html, sem)
-            if not r: continue
-
             name = labeled.get(cid, {}).get("course_name", "")
             if not name:
-                existing = next((v for k,v in per_sem.items() if k[0]==cid), {})
-                name = existing.get("course_name","")
+                existing = next((v for k, v in per_sem.items() if k[0] == cid), {})
+                name = existing.get("course_name", "")
 
             row = {
                 "course_id": cid, "course_name": name, "semester": sem,
@@ -266,19 +240,14 @@ async def step_grades(browser, latest_sem):
                 "max_grade":   f"{r['max_grade']:.3f}"   if r["max_grade"]   is not None else "",
                 "avg_grade":   f"{r['avg_grade']:.3f}"   if r["avg_grade"]   is not None else "",
                 "median_grade":f"{r['median_grade']:.3f}" if r["median_grade"] is not None else "",
-                "avg_general_rank": agg.get(cid,{}).get("avg_general_rank",""),
-                "n_general_rank":   agg.get(cid,{}).get("n_general_rank",""),
+                "avg_general_rank": agg.get(cid, {}).get("avg_general_rank", ""),
+                "n_general_rank":   agg.get(cid, {}).get("n_general_rank", ""),
                 "hist_url":    f"{HIST_BASE}/{cid}/",
-                "cf_url":      f"https://cheesefork.cf/?course={cid}&semester={sem}",
+                "cf_url":      f"{CF_BASE}?course={cid}&semester={sem}",
             }
             per_sem[(cid, sem)] = row
             new_rows.append(row)
             updated_agg.add(cid)
-
-        if i % 50 == 0:
-            log(f"  {i}/{len(need_check)} checked, {len(new_rows)} new rows so far...")
-
-    await page.close()
 
     if not new_rows:
         log("  No new grade data found", "yellow")
@@ -286,7 +255,6 @@ async def step_grades(browser, latest_sem):
 
     log(f"  Found {len(new_rows)} new grade rows for {len(updated_agg)} courses", "green")
 
-    # Recompute aggregated stats
     for cid in updated_agg:
         stats = recompute_agg_for(cid, per_sem, agg)
         if stats: agg[cid] = stats
@@ -313,17 +281,14 @@ async def step_ratings(browser, agg):
 
     updated = 0
     page = await (await browser.new_context()).new_page()
-
-    # Get Firebase config (needed for Firestore REST)
     try:
         await page.goto(CF_BASE, wait_until="domcontentloaded", timeout=30000)
         try: await page.wait_for_load_state("networkidle", timeout=8000)
         except PlaywrightTimeout: pass
-    except: pass
-
+    except Exception:
+        pass
     await page.close()
 
-    # Use Firestore REST API directly
     import urllib.request
     FIRESTORE = f"https://firestore.googleapis.com/v1/projects/{CF_PROJECT}/databases/(default)/documents"
 
@@ -344,11 +309,11 @@ async def step_ratings(browser, agg):
             n_field = fields.get("numRatings", fields.get("numberOfRatings", {}))
             n_val = int(n_field.get("integerValue", n_field.get("doubleValue", 0))) if n_field else 0
 
-            old_val = agg.get(cid, {}).get("avg_general_rank","")
+            old_val = agg.get(cid, {}).get("avg_general_rank", "")
             new_val = f"{val:.3f}"
             if old_val != new_val:
                 if cid not in agg:
-                    agg[cid] = {"course_id": cid, "course_name": labeled[cid].get("course_name","")}
+                    agg[cid] = {"course_id": cid, "course_name": labeled[cid].get("course_name", "")}
                 agg[cid]["avg_general_rank"] = new_val
                 agg[cid]["n_general_rank"]   = str(n_val)
                 updated += 1
@@ -367,166 +332,88 @@ async def step_ratings(browser, agg):
 
     return agg
 
-# ── STEP 4: Scrape מלג courses ────────────────────────────────────────────────
-PORTAL_URL = "https://ugportal.technion.ac.il/הוראה-ובחינות/לימודי-העשרה/"
-CF_BASE    = "https://cheesefork.cf/"
-
-async def scrape_cf_course(page, course_id):
-    """Get credits and prereqs from CheeseFork for a single course."""
-    for sem in ("202502","202501","202403","202402","202401","202302","202301"):
-        try:
-            await page.goto(f"{CF_BASE}?course={course_id}&semester={sem}",
-                            wait_until="domcontentloaded", timeout=20000)
-            try: await page.wait_for_selector("text=נקודות", timeout=3000)
-            except PlaywrightTimeout: pass
-            try: await page.wait_for_load_state("networkidle", timeout=3000)
-            except PlaywrightTimeout: pass
-
-            title = await page.title()
-            if course_id.lstrip("0") not in title and course_id not in title:
-                continue
-
-            name = ""
-            m = re.match(r"^\s*[\d\s]*-\s*(.+?)\s*-", title)
-            if m: name = m.group(1).strip()
-
-            body = await page.inner_text("body")
-            cm = re.search(r"נקודות[^:]*:\s*(\d+(?:\.\d+)?)", body)
-            credits = float(cm.group(1)) if cm and float(cm.group(1)) <= 20 else None
-
-            prereq_str = ""
-            pm = re.search(r"מקצועות קדם[:\s]+([\d\u05d0\u05d5\u05d5 \(\)-]+)", body)
-            if pm:
-                raw = pm.group(1).strip()
-                raw = re.sub(r"\u05d5-", "\u05d5 ", raw)
-                raw = re.sub(r"\u05d0\u05d5-", "\u05d0\u05d5 ", raw)
-                raw = raw.replace("(","").replace(")","")
-                parts = []
-                for t in raw.split():
-                    t = t.strip().rstrip("-")
-                    if re.match(r"^\d{6,8}$", t): parts.append(t.zfill(8))
-                    elif t == "\u05d0\u05d5": parts.append("OR")
-                    elif t == "\u05d5": parts.append("AND")
-                prereq_str = " ".join(parts)
-
-            if credits is not None or name:
-                return name, credits, prereq_str
-        except: continue
-    return "", None, ""
-
-async def scrape_malag_table(container):
-    courses = []
-    rows = await container.query_selector_all("table tbody tr")
-    for row in rows:
-        cells = await row.query_selector_all("td")
-        if len(cells) < 2: continue
-        texts = [(await c.inner_text()).strip() for c in cells]
-        cid_raw = texts[0]
-        if not re.match(r"^\d{6,8}$", cid_raw): continue
-        cid = cid_raw.zfill(8)
-        name_he = texts[1] if len(texts) > 1 else ""
-        courses.append((cid, name_he))
-    return courses
-
-async def step_malag(browser, agg):
+# ── STEP 5: Scrape מלג courses ────────────────────────────────────────────────
+async def step_malag(browser, agg, semester_fallback):
+    """
+    ugportal's מלג listing is now built on a "beefup" accordion (previously
+    Divi/et_pb). Each semester has its own <article class="acc-section beefup">
+    panel; ALL of them (verified live) render their full course table straight
+    into the DOM with no pagination and no need to click/expand — so this
+    reads every "רשימת ..." panel directly instead of guessing at the first
+    matching toggle.
+    """
     log("STEP 5: Scraping מלג courses from Technion portal", "blue")
     labeled = load_labeled()
     existing_rows = [r for r in labeled.values() if r.get("category") != "מלג"]
 
     page = await (await browser.new_context()).new_page()
+    all_courses = []
     try:
         await page.goto(PORTAL_URL, wait_until="domcontentloaded", timeout=30000)
         try: await page.wait_for_load_state("networkidle", timeout=10000)
         except PlaywrightTimeout: pass
 
-        toggles = await page.query_selector_all(
-            ".et_pb_toggle_title, .accordion-title, summary, "
-            "[class*='accordion'] h3, [class*='accordion'] h4, "
-            "[class*='toggle'] h3, [class*='toggle'] h4"
-        )
-        target = None
-        for t in toggles:
-            txt = (await t.inner_text()).strip()
-            if "רשימת" in txt or "סמסטר" in txt:
-                target = t; break
-
-        if not target:
-            log("  Could not find מלג accordion — skipping", "yellow")
+        panels = await page.query_selector_all("article.acc-section.beefup")
+        if not panels:
+            log("  No accordion panels found — portal structure may have changed again", "yellow")
             await page.close(); return existing_rows
 
-        container = await target.evaluate_handle("""el => {
-            let node = el;
-            while (node && node !== document.body) {
-                node = node.parentElement;
-                if (node.classList && Array.from(node.classList).some(c =>
-                    c.includes('toggle') || c.includes('accordion') || c.includes('et_pb')))
-                    return node;
-            }
-            return el.parentElement;
-        }""")
+        for panel in panels:
+            title_el = await panel.query_selector(".accordion-title, .beefup_title")
+            title = (await title_el.inner_text()).strip() if title_el else ""
+            if "רשימת" not in title:
+                continue  # skip exemption ("החרגה...") panels, keep only course lists
 
-        await target.click()
-        await page.wait_for_timeout(2000)
-        try: await page.wait_for_selector("table tbody tr", timeout=8000)
-        except:
-            log("  Table not found after click — skipping מלג", "yellow")
-            await page.close(); return existing_rows
-
-        all_courses = []
-        page_num = 1
-        while True:
-            courses = await scrape_malag_table(container)
-            log(f"  Page {page_num}: {len(courses)} מלג courses")
-            all_courses.extend(courses)
-
-            next_btn = None
-            nav_links = await container.query_selector_all("a, button")
-            for link in nav_links:
-                txt = (await link.inner_text()).strip()
-                cls = (await link.get_attribute("class") or "")
-                if txt in ("›", ">", "Next", "»") or "next" in cls.lower():
-                    try:
-                        if not await link.is_disabled() and await link.get_attribute("aria-disabled") != "true":
-                            next_btn = link; break
-                    except: continue
-            if not next_btn or page_num >= 10: break
-            await next_btn.click(timeout=5000)
-            await page.wait_for_timeout(1500)
-            page_num += 1
-
+            rows = await panel.query_selector_all("table tbody tr")
+            panel_courses = []
+            for row in rows:
+                cells = await row.query_selector_all("td")
+                if len(cells) < 2: continue
+                texts = [(await c.inner_text()).strip() for c in cells]
+                cid_raw = texts[0]
+                if not re.match(r"^\d{6,8}$", cid_raw): continue
+                panel_courses.append((cid_raw.zfill(8), texts[1] if len(texts) > 1 else ""))
+            log(f"  {title[:60]}: {len(panel_courses)} courses")
+            all_courses.extend(panel_courses)
     except Exception as e:
         log(f"  מלג scrape error: {e}", "red")
         await page.close(); return existing_rows
+    await page.close()
 
     seen = set()
-    unique = [(c,n) for c,n in all_courses if c not in seen and not seen.add(c)]
-    log(f"  {len(unique)} unique מלג courses found — fetching credits from CheeseFork...")
+    unique = [(c, n) for c, n in all_courses if c not in seen and not seen.add(c)]
+    log(f"  {len(unique)} unique מלג courses found across all semester panels — fetching credits from CheeseFork...")
+
+    async def worker(page, item):
+        cid, _ = item
+        return await scrape_cf_course(page, cid, semester_fallback)
+
+    def progress(done, total):
+        if done % 10 == 0 or done == total:
+            log(f"  {done}/{total} מלג courses checked...")
+
+    scraped = await run_pooled(browser, unique, worker, concurrency=8, on_progress=progress)
 
     new_rows = []
-    cf_page = await (await browser.new_context()).new_page()
-    for i, (cid, name_he) in enumerate(unique, 1):
+    for (cid, name_he), (name_scraped, credits, prereqs) in zip(unique, scraped):
         ex = agg.get(cid, {})
-        name = ex.get("course_name","") or name_he
-        name_scraped, credits, prereqs = await scrape_cf_course(cf_page, cid)
+        name = ex.get("course_name", "") or name_he
         if not name: name = name_scraped or name_he
         final_credits = credits if credits is not None else 2
         new_rows.append({
             "course_id": cid, "course_name": name, "category": "מלג",
             "credits": final_credits, "prereqs": prereqs,
-            "avg_final_grade":  ex.get("avg_final_grade",""),
-            "avg_general_rank": ex.get("avg_general_rank",""),
-            "n_general_rank":   ex.get("n_general_rank",""),
+            "avg_final_grade":  ex.get("avg_final_grade", ""),
+            "avg_general_rank": ex.get("avg_general_rank", ""),
+            "n_general_rank":   ex.get("n_general_rank", ""),
             "semester": "",
         })
-        if i % 10 == 0: log(f"  {i}/{len(unique)} מלג processed...")
-    await cf_page.close()
-    await page.close()
 
     log(f"  Scraped {len(new_rows)} מלג courses", "green")
     return list(existing_rows) + new_rows
 
 # ── STEP 6: Scrape free choice courses ────────────────────────────────────────
-async def step_free_choice(browser, agg, all_rows_so_far):
+async def step_free_choice(browser, agg, all_rows_so_far, semester_fallback):
     log("STEP 6: Scraping בחירה חופשית courses", "blue")
 
     malag_sport_ids = {
@@ -543,30 +430,34 @@ async def step_free_choice(browser, agg, all_rows_so_far):
     )
     log(f"  {len(candidates)} candidate 03x courses to check...")
 
+    async def worker(page, cid):
+        return await scrape_cf_course(page, cid, semester_fallback)
+
+    def progress(done, total):
+        if done % 25 == 0 or done == total:
+            log(f"  {done}/{total} candidate courses checked...")
+
+    scraped = await run_pooled(browser, candidates, worker, concurrency=8, on_progress=progress)
+
     new_rows = []
-    page = await (await browser.new_context()).new_page()
-    for i, cid in enumerate(candidates, 1):
+    for cid, (name_scraped, credits, prereqs) in zip(candidates, scraped):
         ex = agg[cid]
-        name_scraped, credits, prereqs = await scrape_cf_course(page, cid)
-        name = ex.get("course_name","") or name_scraped
+        name = ex.get("course_name", "") or name_scraped
         if credits is None or credits > 2 or prereqs:
             continue
         new_rows.append({
             "course_id": cid, "course_name": name, "category": "בחירה חופשית",
             "credits": credits, "prereqs": "",
-            "avg_final_grade":  ex.get("avg_final_grade",""),
-            "avg_general_rank": ex.get("avg_general_rank",""),
-            "n_general_rank":   ex.get("n_general_rank",""),
+            "avg_final_grade":  ex.get("avg_final_grade", ""),
+            "avg_general_rank": ex.get("avg_general_rank", ""),
+            "n_general_rank":   ex.get("n_general_rank", ""),
             "semester": "",
         })
-        if i % 20 == 0: log(f"  {i}/{len(candidates)} checked, {len(new_rows)} kept...")
-    await page.close()
 
     log(f"  Found {len(new_rows)} בחירה חופשית courses", "green")
     return existing_rows + new_rows
 
-# ── STEP 7: Update avg_final_grade in courses_labeled.csv ─────────────────────
-
+# ── STEP 4: Update avg_final_grade in courses_labeled.csv ─────────────────────
 def step_update_labeled(agg):
     log("STEP 4: Updating courses_labeled.csv with new grades and ratings", "blue")
     labeled = load_labeled()
@@ -596,7 +487,6 @@ def step_update_labeled(agg):
             w = csv.DictWriter(f, fieldnames=cols)
             w.writeheader(); w.writerows(labeled.values())
 
-        # Copy to UI public folder
         if os.path.exists(os.path.dirname(UI_PUBLIC)):
             shutil.copy(LABELED_CSV, UI_PUBLIC)
             log(f"  Copied to {UI_PUBLIC}", "green")
@@ -615,15 +505,23 @@ async def main():
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
 
-        latest_sem = None
+        all_semesters = []
         if not SKIP_SEM:
-            latest_sem = await step_semester(browser)
+            all_semesters = await step_semester(browser)
         else:
             log("STEP 1: Skipping semester scrape (--skip-sem)", "yellow")
 
+        if not all_semesters:
+            # Fall back to whatever semester_*.json files already exist on disk
+            all_semesters = sorted(
+                os.path.basename(path).replace("semester_", "").replace(".json", "")
+                for path in glob.glob(os.path.join(OUTPUT_DIR, "semester_*.json"))
+            )
+        semester_fallback = list(reversed(all_semesters))  # newest first, for course-detail lookups
+
         per_sem = agg = None
         if not SKIP_GRADES:
-            per_sem, agg, updated_courses = await step_grades(browser, latest_sem)
+            per_sem, agg, updated_courses = await step_grades(browser)
         else:
             log("STEP 2: Skipping grade update (--skip-grades)", "yellow")
             per_sem = load_per_sem()
@@ -634,23 +532,24 @@ async def main():
         else:
             log("STEP 3: Skipping ratings refresh (--skip-ratings)", "yellow")
 
-        # Steps 5 & 6: malag + free choice
         labeled = load_labeled()
         labeled_rows = list(labeled.values())
 
         if not SKIP_MALAG:
-            labeled_rows = await step_malag(browser, agg)
+            labeled_rows = await step_malag(browser, agg, semester_fallback)
         else:
             log("STEP 5: Skipping מלג scrape (--skip-malag)", "yellow")
 
         if not SKIP_FREE:
-            labeled_rows = await step_free_choice(browser, agg, labeled_rows)
+            labeled_rows = await step_free_choice(browser, agg, labeled_rows, semester_fallback)
         else:
             log("STEP 6: Skipping בחירה חופשית scrape (--skip-free)", "yellow")
 
-    # Write updated labeled CSV
+        await browser.close()
+
     if not DRY_RUN and labeled_rows:
-        cols = list(next(iter(load_labeled().values())).keys()) if load_labeled() else                ["course_id","course_name","category","credits","prereqs",
+        cols = list(next(iter(load_labeled().values())).keys()) if load_labeled() else \
+               ["course_id","course_name","category","credits","prereqs",
                 "avg_final_grade","avg_general_rank","n_general_rank","semester"]
         with open(LABELED_CSV, "w", newline="", encoding="utf-8-sig") as f:
             w = csv.DictWriter(f, fieldnames=cols, extrasaction="ignore")
@@ -666,4 +565,6 @@ async def main():
     log("  1. Restart Flask:  python app.py", "")
     log("  2. Reload courses: http://localhost:5000/api/reload", "")
 
-asyncio.run(main())
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())

@@ -1,4 +1,4 @@
-"""
+﻿"""
 scrape_courses.py
 - Scrapes credit points for courses from CheeseFork
 - Joins with existing avg_grade from courses_aggregated_all.csv
@@ -9,6 +9,8 @@ scrape_courses.py
 """
 import asyncio, csv, os, re
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
+
+from scraper_common import discover_semesters, scrape_cf_course
 
 OUTPUT_DIR = "C:/Users/pc/OneDrive - Technion/Desktop/cheesefork_scraper"
 AGG_CSV    = os.path.join(OUTPUT_DIR, "courses_aggregated_all.csv")
@@ -60,61 +62,6 @@ def load_existing():
     return data
 
 # ── Scrape credit points ───────────────────────────────────────────────────────
-async def scrape_credits_and_name(page, course_id):
-    for sem in ("202502", "202501", "202403", "202402", "202401", "202303", "202302", "202301"):
-        try:
-            await page.goto(f"{BASE}?course={course_id}&semester={sem}",
-                            wait_until="domcontentloaded", timeout=30000)
-            try: await page.wait_for_selector("text=נקודות", timeout=3000)
-            except: pass
-            try: await page.wait_for_load_state("networkidle", timeout=3000)
-            except: pass
-
-            title = await page.title()
-            if course_id.lstrip("0") not in title and course_id not in title:
-                continue
-
-            name = ""
-            m = re.match(r"^\s*[\d\s]*-\s*(.+?)\s*-", title)
-            if m: name = m.group(1).strip()
-
-            body_text = await page.inner_text("body")
-
-            # Credits
-            # Match "נקודות: X" or "נקודות זכות: X" — colon required, value 1-10
-            cm = re.search(r"\u05e0\u05e7\u05d5\u05d3\u05d5\u05ea[^:]*:\s*(\d+(?:\.\d+)?)", body_text)
-            credits = float(cm.group(1)) if cm and float(cm.group(1)) <= 20 else None
-
-            # Prerequisites
-            prereq_str = ""
-            pm = re.search(
-                r"\u05de\u05e7\u05e6\u05d5\u05e2\u05d5\u05ea \u05e7\u05d3\u05dd[:\s]+([\d\u05d0\u05d5\u05d5 \(\)-]+)",
-                body_text
-            )
-            if pm:
-                raw = pm.group(1).strip()
-                # Normalize: replace ו- and או- (with hyphen) to spaced versions
-                raw = re.sub(r"\u05d5-", "\u05d5 ", raw)   # ו- -> ו
-                raw = re.sub(r"\u05d0\u05d5-", "\u05d0\u05d5 ", raw)  # או- -> או
-                raw = raw.replace("(", "").replace(")", "")
-                parts = []
-                for t in raw.split():
-                    t = t.strip().rstrip("-")
-                    if re.match(r"^\d{6,8}$", t):
-                        parts.append(t.zfill(8))
-                    elif t == "\u05d0\u05d5":   # או
-                        parts.append("OR")
-                    elif t == "\u05d5":           # ו
-                        parts.append("AND")
-                prereq_str = " ".join(parts)
-
-            if credits is not None or name:
-                return name, credits, prereq_str
-        except:
-            continue
-    return "", None, ""
-
-
 # ── Discover פקולטיים courses from CheeseFork ─────────────────────────────────
 async def discover_faculty_courses(page):
     """Get all 09xxxxx courses from CheeseFork that are not in our list."""
@@ -151,6 +98,7 @@ async def main():
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         page    = await (await browser.new_context()).new_page()
+        semester_fallback = list(reversed(await discover_semesters(page)))
 
         # 1. Discover פקולטיים courses
         faculty_courses = await discover_faculty_courses(page)
@@ -171,7 +119,7 @@ async def main():
             # Skip credit scraping if we already have name+credits from a previous run
             print(f"[{i}/{len(work_list)}] {cid} {category}", end="  ")
 
-            name_scraped, credits, prereqs = await scrape_credits_and_name(page, cid)
+            name_scraped, credits, prereqs = await scrape_cf_course(page, cid, semester_fallback)
             name = name_csv or name_scraped
 
             print(f"credits={credits}  prereqs={prereqs or '-'}  {name[:30] if name else '?'}")
