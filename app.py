@@ -226,6 +226,8 @@ def recommend(available_ids, taken_ids, target_pts, must_ids=None, block_ids=Non
 
     schedule = list(must_courses)
     pts = must_pts
+    for c in must_courses:
+        add_cat(c)
 
     # Pass 1: quota-aware fill
     for c in free_cands:
