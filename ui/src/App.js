@@ -207,6 +207,16 @@ const REQ_TO_CATEGORY = {
   "בחירה חופשית":   "בחירה חופשית",
 };
 
+// Categories the exam-date scraper actually covers (scrape_exam_dates.py) —
+// exam preference toggles only make sense for these.
+const EXAM_PREF_CATEGORIES = [
+  { cat: "מלג",                   label: "מלג" },
+  { cat: "קורסי בחירה בנתונים",  label: "Data electives (נתונים)" },
+  { cat: "עתיר נתונים",          label: "Data-intensive (עתיר)" },
+  { cat: "קורסי בחירה פקולטיים", label: "Faculty electives" },
+  { cat: "בחירה חופשית",         label: "Free choice (חופשית)" },
+];
+
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [taken, setTaken] = useTakenCourses();
@@ -246,11 +256,11 @@ export default function App() {
   const [mustInput, setMustInput] = useState("");
   const [mustStatus, setMustStatus] = useState(null);
   const [mustStatusLoading, setMustStatusLoading] = useState(false);
-  const [currentInput, setCurrentInput] = useState("");
   const [browseCategory, setBrowseCategory] = useState(null); // course category string, or null when closed
   const [browseNextOnly, setBrowseNextOnly] = useState(true);
   const [semCourseCache, setSemCourseCache] = useState({}); // { [semesterCode]: Set of course ids }
   const [semCourseLoading, setSemCourseLoading] = useState(false);
+  const [examPref, setExamPref] = useState({}); // { categoryString: "any" | "with" | "without" }
   const [blockIds, setBlockIds] = useState([]);
   const [blockInput, setBlockInput] = useState("");
   const [recommendation, setRecommendation] = useState(null);
@@ -591,6 +601,19 @@ export default function App() {
                 </div>
               </div>
               <button className="btn-primary" style={V.btnPrimary} onClick={addManual}>Add →</button>
+
+              {takenList.filter(([, info]) => info.source === "manual").length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 16 }}>
+                  {takenList.filter(([, info]) => info.source === "manual").map(([cid, info]) => (
+                    <span key={cid} style={{ display: "flex", alignItems: "center", gap: 6,
+                      fontSize: 11, padding: "4px 10px", borderRadius: 3,
+                      background: "#0a1420", border: "1px solid #1a3a4a", color: "#6b9bc4" }}>
+                      <span className="he">{info.name || cid}</span>
+                      <span style={{ cursor: "pointer", color: "#4a7a9a" }} onClick={() => removeCourse(cid)}>✕</span>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             {takenCount > 0 && (
@@ -685,31 +708,6 @@ export default function App() {
 
     const removeMust = (id) => setMustIds(prev => prev.filter(x => x !== id));
 
-    // Courses being taken THIS semester (not graded yet) — treated as passed
-    // so degree progress and next-semester prereqs already account for them.
-    const addCurrent = () => {
-      const id = currentInput.trim().padStart(8, "0");
-      if (!/^\d{8}$/.test(id)) { setErr("Course ID must be 8 digits"); return; }
-      const dbEntry = coursesDb[id] || {};
-      setTaken(prev => ({
-        ...prev,
-        [id]: {
-          name: dbEntry.name || "—",
-          grade: "In Progress",
-          credits: dbEntry.credits ?? null,
-          category: dbEntry.category || "",
-          semester: "",
-          source: "current",
-          passed: true,
-        },
-      }));
-      setMustStatus(null); // refetch "what you still need" with the updated total
-      setCurrentInput("");
-      setErr("");
-      flash(`✓ Added ${id} as in progress`);
-    };
-    const removeCurrent = (id) => { removeCourse(id); setMustStatus(null); };
-
     const findSchedule = async () => {
       setRecLoading(true); setRecError("");
       try {
@@ -723,6 +721,7 @@ export default function App() {
             block:  blockIds,
             min:    minPts,
             max:    maxPts,
+            examPref,
           })
         });
         const data = await res.json();
@@ -759,6 +758,7 @@ export default function App() {
       setMustInput("");
       setMustStatus(null);
       setBrowseCategory(null);
+      setExamPref({});
       setBlockIds([]);
       setBlockInput("");
       setRecommendation(null);
@@ -903,32 +903,6 @@ export default function App() {
                 </div>
               </div>
             )}
-
-            <div style={V.section}>
-              <div style={{ ...V.secTitle, marginBottom: 8 }}>Courses you're currently taking</div>
-              <div style={{ fontSize: 11, color: "#4a5565", marginBottom: 10 }}>
-                Your transcript only shows graded courses — add anything you're taking right now (not graded yet) so it counts toward your progress and unlocks prerequisites for next semester
-              </div>
-              <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
-                <input style={{ ...V.input, width: 200 }} placeholder="e.g. 00960411" autoComplete="off"
-                  value={currentInput}
-                  onChange={e => setCurrentInput(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && addCurrent()} />
-                <button className="btn-primary" style={V.btnPrimary} onClick={addCurrent}>Add →</button>
-              </div>
-              {Object.entries(taken).filter(([, info]) => info.source === "current").length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {Object.entries(taken).filter(([, info]) => info.source === "current").map(([cid, info]) => (
-                    <span key={cid} style={{ display: "flex", alignItems: "center", gap: 6,
-                      fontSize: 11, padding: "4px 10px", borderRadius: 3,
-                      background: "#0a1420", border: "1px solid #1a3a4a", color: "#6b9bc4" }}>
-                      <span className="he">{info.name || cid}</span>
-                      <span style={{ cursor: "pointer", color: "#4a7a9a" }} onClick={() => removeCurrent(cid)}>✕</span>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
 
             <div style={V.section}>
               <div style={{ ...V.secTitle, marginBottom: 8 }}>Add a required course</div>
@@ -1131,6 +1105,33 @@ export default function App() {
                   {mustPts > 0 && <span style={{ color: "#5a5040" }}> ({mustPts} required + {remaining(effectiveMin)}–{remaining(effectiveMax)} elective)</span>}
                 </div>
 
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ ...V.secTitle, marginBottom: 10 }}>Exam preference (optional)</div>
+                  {EXAM_PREF_CATEGORIES.map(({ cat, label }) => {
+                    const val = examPref[cat] || "any";
+                    return (
+                      <div key={cat} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                        <span style={{ fontSize: 12, color: "#8a8a95" }} className="he">{label}</span>
+                        <div style={{ display: "flex", gap: 4 }}>
+                          {[["any", "Any"], ["with", "With exam"], ["without", "No exam"]].map(([v, text]) => (
+                            <button key={v}
+                              onClick={() => setExamPref(prev => ({ ...prev, [cat]: v }))}
+                              style={{
+                                fontSize: 10, padding: "4px 10px", borderRadius: 3, cursor: "pointer",
+                                border: `1px solid ${val === v ? "#c8b560" : "#1e2530"}`,
+                                background: val === v ? "#1a1608" : "transparent",
+                                color: val === v ? "#c8b560" : "#5a6575",
+                                fontFamily: "'IBM Plex Mono', monospace",
+                              }}>
+                              {text}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
                 {recError && <div style={{ ...V.err, marginBottom: 16 }}>{recError}</div>}
 
                 {recLoading ? (
@@ -1272,6 +1273,7 @@ export default function App() {
                     <th style={V.th}>Category</th>
                     <th style={V.th}>Credits</th>
                     <th style={V.th}>Avg grade</th>
+                    <th style={V.th}>Exam</th>
                     <th style={V.th}></th>
                   </tr></thead>
                   <tbody>
@@ -1285,6 +1287,9 @@ export default function App() {
                         <td style={{ ...V.td, color: "#4a5060" }}>{c.credits}</td>
                         <td style={{ ...V.td, color: c.grade ? "#6bc47a" : "#5a6575" }}>
                           {c.grade ? c.grade.toFixed(1) : "—"}
+                        </td>
+                        <td style={{ ...V.td, fontSize: 11, color: c.has_test === "1" ? "#c46b6b" : c.has_test === "0" ? "#6bc47a" : "#4a5565" }}>
+                          {c.has_test === "1" ? "exam" : c.has_test === "0" ? "no exam" : "—"}
                         </td>
                         <td style={{ ...V.td }}>
                           {c.must && <span style={{ fontSize: 10, color: "#c8b560", letterSpacing: "0.06em" }}>REQUIRED</span>}

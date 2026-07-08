@@ -38,6 +38,7 @@ def load_courses():
                 "credits":  credits,
                 "grade":    grade,
                 "prereqs":  row.get("prereqs", "").strip(),
+                "has_test": row.get("has_test", "").strip(),  # "1"/"0"/"" (not checked)
             }
     return courses
 
@@ -123,8 +124,44 @@ def weighted_grade(courses):
     if total == 0: return 0
     return sum(c["credits"] * c["grade"] for c in graded) / total
 
-def recommend(available_ids, taken_ids, target_pts, must_ids=None, block_ids=None, failed_ids=None):
+def _closest_subset(items, max_units):
+    """
+    0/1 subset-sum: given `items` (course dicts, already sorted by
+    preference — priority then -grade) and a point budget `max_units`
+    (credits * 2, so everything is an integer), find the subset whose
+    credit-sum is the largest value <= max_units — i.e. fills the gap as
+    exactly as possible instead of stopping at the first course that
+    doesn't overshoot, which is what let a category's courses that all
+    share one credit size (e.g. מלג at 2.0 each) get skipped entirely
+    when the leftover gap didn't happen to match that size.
+
+    Standard subset-sum DP with backpointers. Processing `items` in
+    preference order and never overwriting an already-reached sum means
+    equally-good sums prefer earlier (higher-priority/higher-grade)
+    items — a cheap way to bias the result without a full optimal search.
+    """
+    if max_units <= 0 or not items:
+        return [], 0
+    reached = [None] * (max_units + 1)   # reached[s] = (item_index, prev_sum) or None
+    reached[0] = (-1, -1)
+    for idx, c in enumerate(items):
+        w = round(c["credits"] * 2)
+        if w <= 0 or w > max_units: continue
+        for s in range(max_units, w - 1, -1):
+            if reached[s] is None and reached[s - w] is not None:
+                reached[s] = (idx, s - w)
+
+    best_s = next((s for s in range(max_units, -1, -1) if reached[s] is not None), 0)
+    chosen, s = [], best_s
+    while s > 0:
+        idx, prev_s = reached[s]
+        chosen.append(items[idx])
+        s = prev_s
+    return chosen, best_s
+
+def recommend(available_ids, taken_ids, target_pts, must_ids=None, block_ids=None, failed_ids=None, exam_pref=None):
     must_ids = set(must_ids or [])
+    exam_pref = exam_pref or {}  # { category_string: "with" | "without" | "any" }
     failed_ids_set = set(failed_ids or [])
     # For prereq checking, only truly passed courses count
     assumed  = (taken_ids - failed_ids_set) | must_ids
@@ -152,6 +189,11 @@ def recommend(available_ids, taken_ids, target_pts, must_ids=None, block_ids=Non
         if cid in COMMON_EXEMPTIONS and cid not in must_ids: continue  # typically exempted
         c = COURSES_DB.get(cid)
         if not c or c["credits"] == 0: continue
+        pref = exam_pref.get(c["category"])
+        # only filter when we actually have exam data for this course (has_test
+        # is "1"/"0"); courses we never checked ("") pass through regardless
+        if pref == "with"    and c["has_test"] != "1": continue
+        if pref == "without" and c["has_test"] != "0": continue
         if not prereqs_met(c, assumed): continue
         candidates.append(c)
 
@@ -192,13 +234,28 @@ def recommend(available_ids, taken_ids, target_pts, must_ids=None, block_ids=Non
         schedule.append(c); pts += c["credits"]; add_cat(c)
         if pts >= target_pts - 0.01: break
 
-    # Pass 2: fill remaining gap ignoring quotas
+    # Pass 2: if still short, close the remaining gap with the best-fitting
+    # *combination* of whatever's left (ignoring quotas), instead of a
+    # single first-fit course — see _closest_subset for why this matters.
     if pts < target_pts - 0.24:
-        for c in free_cands:
-            if c in schedule: continue
-            if pts + c["credits"] > target_pts + 0.01: continue
-            schedule.append(c); pts += c["credits"]
-            if pts >= target_pts - 0.24: break
+        remaining = [c for c in free_cands if c not in schedule]
+        gap_units = round((target_pts - pts) * 2)
+        chosen, filled_units = _closest_subset(remaining, gap_units)
+        schedule.extend(chosen)
+        pts += filled_units / 2
+
+    # Pass 3: pass 1's own greedy picks can themselves be the problem — a
+    # locally-fine choice can lock in a leftover gap nothing combines to
+    # close, even though a *different* set of courses hits the target
+    # exactly. If we're still short, throw away pass 1/2's picks and run
+    # one clean subset-sum over the whole free pool; keep it only if it
+    # gets closer to target than what we already had.
+    if pts < target_pts - 0.24:
+        full_units = round((target_pts - must_pts) * 2)
+        chosen2, filled2_units = _closest_subset(free_cands, full_units)
+        if filled2_units / 2 > pts - must_pts:
+            schedule = list(must_courses) + chosen2
+            pts = must_pts + filled2_units / 2
 
     if pts < target_pts - 0.24: return None, 0
     return schedule, weighted_grade(schedule)
@@ -215,6 +272,7 @@ def fmt_schedule(schedule, must_ids):
             "credits":  c["credits"],
             "grade":    round(c["grade"], 1),
             "must":     c["id"] in set(must_ids),
+            "has_test": c["has_test"],  # "1"/"0"/""
         } for c in sorted(schedule, key=lambda x: (course_priority(x), -x["grade"]))]
     }
 
@@ -264,6 +322,7 @@ def api_recommend():
     block_ids  = set(body.get("block", []))
     min_pts   = float(body.get("min", 9))
     max_pts   = float(body.get("max", 12))
+    exam_pref = body.get("examPref", {}) or {}
 
     if not re.match(r"^\d{6}$", semester):
         return jsonify({"error": "invalid semester"}), 400
@@ -275,7 +334,7 @@ def api_recommend():
     options, seen = [], set()
     pt = min_pts
     while pt <= max_pts + 0.01:
-        schedule, score = recommend(available, taken_ids, pt, must_ids, block_ids, failed_ids)
+        schedule, score = recommend(available, taken_ids, pt, must_ids, block_ids, failed_ids, exam_pref)
         if schedule:
             key = frozenset(c["id"] for c in schedule)
             if key not in seen:

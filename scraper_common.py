@@ -206,6 +206,38 @@ async def scrape_cf_course(page, course_id, semester_fallback):
             continue
     return "", None, ""
 
+_EXAM_A_RE = re.compile(r"מועד\s*א['’]?\s*:\s*(\d{2}-\d{2}-\d{4})")
+_EXAM_B_RE = re.compile(r"מועד\s*ב['’]?\s*:\s*(\d{2}-\d{2}-\d{4})")
+
+async def check_exam_dates(page, course_id, semester):
+    """
+    Returns {"has_exam": True/False/None, "date_a": "DD-MM-YYYY" or "", "date_b": ...}
+    — CheeseFork shows "מועד א': DD-MM-YYYY" / "מועד ב': ..." on a course's
+    page when it has a written exam, and omits it entirely (project/lab-graded
+    courses, etc.) when it doesn't. has_exam is None if the course page
+    didn't resolve for this semester (can't tell either way).
+    """
+    out = {"has_exam": None, "date_a": "", "date_b": ""}
+    try:
+        await page.goto(f"{CF_BASE}?course={course_id}&semester={semester}",
+                        wait_until="domcontentloaded", timeout=20000)
+        try: await page.wait_for_selector("text=נקודות", timeout=5000)
+        except PlaywrightTimeout: pass
+        try: await page.wait_for_load_state("networkidle", timeout=5000)
+        except PlaywrightTimeout: pass
+        await page.wait_for_timeout(800)  # Angular route/title settle buffer
+        body = await page.inner_text("body")
+        title = await page.title()
+        if course_id.lstrip("0") not in title and course_id not in title:
+            return out  # course page didn't resolve for this semester — has_exam stays None
+        ma, mb = _EXAM_A_RE.search(body), _EXAM_B_RE.search(body)
+        out["has_exam"] = bool(ma)
+        if ma: out["date_a"] = ma.group(1)
+        if mb: out["date_b"] = mb.group(1)
+        return out
+    except Exception:
+        return out
+
 # ── Bounded-concurrency worker pool ────────────────────────────────────────────
 async def run_pooled(browser, items, worker, concurrency=8, on_progress=None):
     """
