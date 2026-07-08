@@ -66,7 +66,7 @@ def prereqs_met(course, taken_ids):
 
 MANDATORY_SEMESTER = {
     "00940345":1,"01040031":1,"01040166":1,"02340117":1,"03240033":1,
-    "00940700":2,"00940412":2,"00940210":2,"01040032":2,"01140051":2,
+    "00940700":2,"00940219":2,"00940412":2,"00940210":2,"01040032":2,"01140051":2,
     "00940224":3,"00940241":3,"00940424":3,"00950296":3,"00960570":3,
     "00940314":4,"00960211":4,"00960224":4,"00960327":4,"00960411":4,"00970414":4,
     "00960210":5,"00960250":5,"00960275":5,"00970209":5,"00970447":5,
@@ -242,6 +242,17 @@ def api_available():
     available = load_available(semester)
     count = len(available & set(COURSES_DB.keys()))
     return jsonify({"semester": semester, "count": count})
+
+@app.route("/api/semester-courses")
+def api_semester_courses():
+    """Return the actual course-ID list offered in a semester (not just a count),
+    for the course-browsing table."""
+    semester = request.args.get("semester", "")
+    if not re.match(r"^\d{6}$", semester):
+        return jsonify({"error": "invalid semester"}), 400
+    available = load_available(semester)
+    courses = sorted(available & set(COURSES_DB.keys()))
+    return jsonify({"semester": semester, "courses": courses})
 
 @app.route("/api/recommend", methods=["POST"])
 def api_recommend():

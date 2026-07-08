@@ -193,6 +193,20 @@ const REQ_LABELS = {
   "total":          "Total credits",
 };
 
+// Maps a REQ_LABELS bucket key to the actual course category string stored
+// in courses_labeled.csv (they differ for a few buckets — e.g. the CSV uses
+// "קורסי בחירה בנתונים", not the bare "בחירה בנתונים" bucket name).
+const REQ_TO_CATEGORY = {
+  "חובה":           "חובה",
+  "קורס מדעי":      "קורס מדעי",
+  "בחירה בנתונים":  "קורסי בחירה בנתונים",
+  "עתיר נתונים_n":  "עתיר נתונים",
+  "בחירה פקולטית":  "קורסי בחירה פקולטיים",
+  "ספורט_n":        "קורס ספורט",
+  "מלג_n":          "מלג",
+  "בחירה חופשית":   "בחירה חופשית",
+};
+
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [taken, setTaken] = useTakenCourses();
@@ -233,6 +247,10 @@ export default function App() {
   const [mustStatus, setMustStatus] = useState(null);
   const [mustStatusLoading, setMustStatusLoading] = useState(false);
   const [currentInput, setCurrentInput] = useState("");
+  const [browseCategory, setBrowseCategory] = useState(null); // course category string, or null when closed
+  const [browseNextOnly, setBrowseNextOnly] = useState(true);
+  const [semCourseCache, setSemCourseCache] = useState({}); // { [semesterCode]: Set of course ids }
+  const [semCourseLoading, setSemCourseLoading] = useState(false);
   const [blockIds, setBlockIds] = useState([]);
   const [blockInput, setBlockInput] = useState("");
   const [recommendation, setRecommendation] = useState(null);
@@ -740,6 +758,7 @@ export default function App() {
       setMustIds([]);
       setMustInput("");
       setMustStatus(null);
+      setBrowseCategory(null);
       setBlockIds([]);
       setBlockInput("");
       setRecommendation(null);
@@ -829,6 +848,22 @@ export default function App() {
       const missing = mustStatus?.missing || {};
       const reqRows = Object.keys(REQ_LABELS).filter(k => k !== "total");
 
+      if (browseCategory && browseNextOnly && !semCourseCache[semInput] && !semCourseLoading) {
+        setSemCourseLoading(true);
+        fetch(`http://localhost:5000/api/semester-courses?semester=${semInput}`)
+          .then(r => r.json())
+          .then(data => setSemCourseCache(prev => ({ ...prev, [semInput]: new Set(data.courses || []) })))
+          .catch(() => setSemCourseCache(prev => ({ ...prev, [semInput]: new Set() })))
+          .finally(() => setSemCourseLoading(false));
+      }
+
+      const browseRows = browseCategory
+        ? Object.entries(coursesDb)
+            .filter(([id, c]) => c.category === browseCategory && !taken[id])
+            .filter(([id]) => !browseNextOnly || (semCourseCache[semInput] && semCourseCache[semInput].has(id)))
+            .sort((a, b) => (b[1].avgGrade || 0) - (a[1].avgGrade || 0))
+        : [];
+
       return (
       <div style={V.wrap}>
         <style>{css}</style>
@@ -849,15 +884,20 @@ export default function App() {
                 <div style={{ ...V.secTitle, marginBottom: 12 }}>What you still need for your degree</div>
                 {reqRows.map(k => {
                   const done = (missing[k] || 0) <= 0;
+                  const cat = REQ_TO_CATEGORY[k];
                   return (
                     <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#8a8a95", marginBottom: 8 }}>
-                      <span className="he">{REQ_LABELS[k]}</span>
+                      <span className="he" style={{ cursor: "pointer", borderBottom: "1px dotted #3a4048" }}
+                        onClick={() => setBrowseCategory(cat)}>
+                        {REQ_LABELS[k]}
+                      </span>
                       <span style={{ color: done ? "#6bc47a" : "#c8b560", fontWeight: 600 }}>
                         {done ? "✓ done" : `${missing[k]} ${k.endsWith("_n") ? (missing[k] === 1 ? "course" : "courses") : "pts"} needed`}
                       </span>
                     </div>
                   );
                 })}
+                <div style={{ fontSize: 10, color: "#4a5565", marginTop: 4 }}>Click any category to browse its courses</div>
                 <div style={{ fontSize: 10, color: "#5a6575", marginTop: 14, lineHeight: 1.6, borderTop: "1px solid #181c24", paddingTop: 10 }}>
                   ⚠ This is calculated automatically from your saved courses and could be wrong — please double-check against your official degree audit. We did our best to get it right.
                 </div>
@@ -974,6 +1014,68 @@ export default function App() {
           </div>
         </div>
         {toast && <div className="toast-anim" style={V.toast}>{toast}</div>}
+
+        {browseCategory && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 100,
+            display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
+            onClick={() => setBrowseCategory(null)}>
+            <div style={{ background: "#0c0e12", border: "1px solid #1e2530", borderRadius: 8,
+              padding: 24, maxWidth: 640, width: "100%", maxHeight: "80vh", display: "flex", flexDirection: "column" }}
+              onClick={e => e.stopPropagation()}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                <div style={{ fontSize: 15, color: "#e8e4da" }} className="he">{browseCategory}</div>
+                <span style={{ cursor: "pointer", color: "#5a6575", fontSize: 12 }} onClick={() => setBrowseCategory(null)}>✕ close</span>
+              </div>
+              <div style={{ fontSize: 11, color: "#5a6575", marginBottom: 14 }}>Courses you haven't taken yet</div>
+
+              <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+                <button
+                  onClick={() => setBrowseNextOnly(true)}
+                  style={{ ...V.btnGhost, padding: "6px 14px", fontSize: 11,
+                    borderColor: browseNextOnly ? "#c8b560" : "#1e2530", color: browseNextOnly ? "#c8b560" : "#5a6575" }}>
+                  Offered {semLabel(semInput)}
+                </button>
+                <button
+                  onClick={() => setBrowseNextOnly(false)}
+                  style={{ ...V.btnGhost, padding: "6px 14px", fontSize: 11,
+                    borderColor: !browseNextOnly ? "#c8b560" : "#1e2530", color: !browseNextOnly ? "#c8b560" : "#5a6575" }}>
+                  All courses
+                </button>
+              </div>
+
+              <div style={{ overflow: "auto" }}>
+                {browseNextOnly && semCourseLoading ? (
+                  <div style={{ fontSize: 12, color: "#5a6575", padding: "16px 0" }}>Loading...</div>
+                ) : browseRows.length === 0 ? (
+                  <div style={{ fontSize: 12, color: "#4a5565", padding: "16px 0" }}>
+                    No courses found{browseNextOnly ? " for this semester" : ""} — try "All courses" instead
+                  </div>
+                ) : (
+                  <table style={V.table}>
+                    <thead><tr>
+                      <th style={V.th}>Course ID</th>
+                      <th style={V.th}>Name</th>
+                      <th style={V.th}>Credits</th>
+                      <th style={V.th}>Avg grade</th>
+                      <th style={V.th}>Avg rating</th>
+                    </tr></thead>
+                    <tbody>
+                      {browseRows.map(([id, c]) => (
+                        <tr key={id} className="row-hover">
+                          <td style={{ ...V.td, color: "#c8b560", letterSpacing: "0.05em" }}>{id}</td>
+                          <td style={{ ...V.td, color: "#9a9090" }} className="he">{c.name}</td>
+                          <td style={{ ...V.td, color: "#4a5060" }}>{c.credits ?? "—"}</td>
+                          <td style={{ ...V.td, color: c.avgGrade ? "#6bc47a" : "#5a6575" }}>{c.avgGrade ? c.avgGrade.toFixed(1) : "—"}</td>
+                          <td style={{ ...V.td, color: "#5a6575" }}>{c.avgRank ? c.avgRank.toFixed(2) : "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       );
     }
