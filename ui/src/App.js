@@ -88,27 +88,31 @@ function parseTranscript(text) {
 
     // numeric grade: "3.5 66 2022-2023" or "3.5 66 2022"
     const numM = chunk.match(/\b(\d+(?:\.\d+)?)\s+(\d{1,3})\s+\d{4}/);
+    // Technion transcripts come in English ("Pass"/"Exemption ...") or Hebrew
+    // ("עובר"/"פטור ..."). Binary-pass and exemption courses carry no numeric
+    // grade at all, so both vocabularies have to be checked here or those
+    // rows silently vanish (gradeStr stays null and the row is dropped below).
     if (numM) {
       gradeNum = parseFloat(numM[2]);
       gradeStr = String(Math.round(gradeNum));
       passed = gradeNum >= 55;
-    } else if (/\bPass\b/i.test(chunk)) {
+    } else if (/\bPass\b/i.test(chunk) || /עובר/.test(chunk)) {
       gradeStr = "Pass"; passed = true;
-    } else if (/Exemption with points/i.test(chunk)) {
+    } else if (/Exemption with points/i.test(chunk) || /פטור עם ניקוד/.test(chunk)) {
       gradeStr = "Exemption +pts"; passed = true;
-    } else if (/Exemption without points/i.test(chunk)) {
+    } else if (/Exemption without points/i.test(chunk) || /פטור ללא ניקוד/.test(chunk)) {
       gradeStr = "Exemption –pts"; passed = false;
-    } else if (/\bExemption\b/i.test(chunk)) {
+    } else if (/\bExemption\b/i.test(chunk) || /פטור/.test(chunk)) {
       gradeStr = "Exemption"; passed = false;
     }
 
     // semester
-    const semM = chunk.match(/(\d{4}-\d{4}\s+(?:Winter|Spring|Summer))/);
+    const semM = chunk.match(/(\d{4}-\d{4}\s+(?:Winter|Spring|Summer|חורף|אביב|קיץ)(?:\s+תש[^\s]*)?)/);
     const semester = semM ? semM[1] : "";
 
     // credits: number followed by grade+year OR Pass/Exemption
     // lookahead prevents matching "1" in "Statistics 1" or "Physics 1"
-    const credM = chunk.match(/\b(\d+(?:\.\d+)?)\s+(?=\d{1,3}\s+\d{4}|Pass\b|Exemption\b)/);
+    const credM = chunk.match(/\b(\d+(?:\.\d+)?)\s+(?=\d{1,3}\s+\d{4}|Pass\b|Exemption\b|עובר|פטור)/);
     const credits = credM ? parseFloat(credM[1]) : null;
 
     // name: text before the credits match
@@ -124,6 +128,16 @@ function parseTranscript(text) {
     name = name.replace(/Haifa,.*$/i, "").trim();
     name = name.replace(/Page \d+ of \d+.*/i, "").trim();
     name = name.replace(/SUBJECT CREDITS.*/i, "").trim();
+    // Hebrew equivalents of the above
+    name = name.replace(/\(E\(:.*$/, "").trim();
+    name = name.replace(/ציון מעבר מינימלי.*/, "").trim();
+    name = name.replace(/סולם ציונים.*/, "").trim();
+    name = name.replace(/חיפה,.*$/, "").trim();
+    name = name.replace(/עמוד \d+ מתוך \d+.*/, "").trim();
+    name = name.replace(/פטור עם ניקוד.*/, "").trim();
+    name = name.replace(/פטור ללא ניקוד.*/, "").trim();
+    name = name.replace(/עובר.*/, "").trim();
+    name = name.replace(/פטור.*/, "").trim();
 
     if (gradeStr) {
       results.push({ cid, name, gradeStr, gradeNum, credits, semester, passed });
@@ -152,6 +166,7 @@ const GradePill = ({ g }) => {
   let bg = "#1e3a2a", color = "#6bc47a";
   if (!isNaN(num) && num < 55) { bg = "#3a1e1e"; color = "#c46b6b"; }
   if (g === "Exemption –pts" || g === "Exemption") { bg = "#1e1e1e"; color = "#555"; }
+  if (g === "In Progress") { bg = "#0a1420"; color = "#6b9bc4"; }
   return (
     <span style={{ background: bg, color, borderRadius: 3, padding: "2px 8px", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em" }}>
       {g}
@@ -159,11 +174,24 @@ const GradePill = ({ g }) => {
   );
 };
 
-const SourceDot = ({ s }) => (
-  <span style={{ color: s === "manual" ? "#c8a050" : "#4a7a5a", fontSize: 11 }}>
-    {s === "manual" ? "manual" : "transcript"}
-  </span>
-);
+const SourceDot = ({ s }) => {
+  const label = s === "manual" ? "manual" : s === "current" ? "in progress" : "transcript";
+  const color = s === "manual" ? "#c8a050" : s === "current" ? "#6b9bc4" : "#4a7a5a";
+  return <span style={{ color, fontSize: 11 }}>{label}</span>;
+};
+
+// ─── Degree requirement category labels (mirrors REQ keys in app.py) ─────────
+const REQ_LABELS = {
+  "חובה":           "Mandatory (חובה)",
+  "קורס מדעי":      "Science (מדעי)",
+  "בחירה בנתונים":  "Data electives (נתונים)",
+  "עתיר נתונים_n":  "Data-intensive (עתיר)",
+  "בחירה פקולטית":  "Faculty electives",
+  "ספורט_n":        "Sport courses",
+  "מלג_n":          "מלג courses",
+  "בחירה חופשית":   "Free choice (חופשית)",
+  "total":          "Total credits",
+};
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
@@ -202,6 +230,9 @@ export default function App() {
   const [planStep, setPlanStep] = useState("semester"); // semester | must | slider | results
   const [mustIds, setMustIds] = useState([]);
   const [mustInput, setMustInput] = useState("");
+  const [mustStatus, setMustStatus] = useState(null);
+  const [mustStatusLoading, setMustStatusLoading] = useState(false);
+  const [currentInput, setCurrentInput] = useState("");
   const [blockIds, setBlockIds] = useState([]);
   const [blockInput, setBlockInput] = useState("");
   const [recommendation, setRecommendation] = useState(null);
@@ -636,6 +667,31 @@ export default function App() {
 
     const removeMust = (id) => setMustIds(prev => prev.filter(x => x !== id));
 
+    // Courses being taken THIS semester (not graded yet) — treated as passed
+    // so degree progress and next-semester prereqs already account for them.
+    const addCurrent = () => {
+      const id = currentInput.trim().padStart(8, "0");
+      if (!/^\d{8}$/.test(id)) { setErr("Course ID must be 8 digits"); return; }
+      const dbEntry = coursesDb[id] || {};
+      setTaken(prev => ({
+        ...prev,
+        [id]: {
+          name: dbEntry.name || "—",
+          grade: "In Progress",
+          credits: dbEntry.credits ?? null,
+          category: dbEntry.category || "",
+          semester: "",
+          source: "current",
+          passed: true,
+        },
+      }));
+      setMustStatus(null); // refetch "what you still need" with the updated total
+      setCurrentInput("");
+      setErr("");
+      flash(`✓ Added ${id} as in progress`);
+    };
+    const removeCurrent = (id) => { removeCourse(id); setMustStatus(null); };
+
     const findSchedule = async () => {
       setRecLoading(true); setRecError("");
       try {
@@ -683,6 +739,7 @@ export default function App() {
       setPlanStep("semester");
       setMustIds([]);
       setMustInput("");
+      setMustStatus(null);
       setBlockIds([]);
       setBlockInput("");
       setRecommendation(null);
@@ -757,7 +814,22 @@ export default function App() {
     }
 
         // ── Step: must-take ─────────────────────────────────────────────────────
-    if (planStep === "must") return (
+    if (planStep === "must") {
+      if (mustStatus === null && !mustStatusLoading) {
+        setMustStatusLoading(true);
+        fetch("http://localhost:5000/api/status", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ taken: Object.keys(taken).filter(id => taken[id].passed !== false) })
+        }).then(r => r.json())
+          .then(data => setMustStatus(data))
+          .catch(() => setMustStatus({}))
+          .finally(() => setMustStatusLoading(false));
+      }
+
+      const missing = mustStatus?.missing || {};
+      const reqRows = Object.keys(REQ_LABELS).filter(k => k !== "total");
+
+      return (
       <div style={V.wrap}>
         <style>{css}</style>
         <div style={V.header}>
@@ -771,6 +843,52 @@ export default function App() {
             <div style={V.sub}>Step 2 of 3 — add courses you must take this semester (optional)</div>
               <div style={{ fontSize: 11, color: "#3a5040", marginTop: 6, marginBottom: 4 }}>💡 Have an exemption for a course like אנגלית טכנית? Add it to the <span style={{color:"#c8b560"}}>exclude list</span> below so it won't be recommended</div>
             {err && <div style={V.err}>{err}</div>}
+
+            {mustStatus && (
+              <div style={V.section}>
+                <div style={{ ...V.secTitle, marginBottom: 12 }}>What you still need for your degree</div>
+                {reqRows.map(k => {
+                  const done = (missing[k] || 0) <= 0;
+                  return (
+                    <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#8a8a95", marginBottom: 8 }}>
+                      <span className="he">{REQ_LABELS[k]}</span>
+                      <span style={{ color: done ? "#6bc47a" : "#c8b560", fontWeight: 600 }}>
+                        {done ? "✓ done" : `${missing[k]} ${k.endsWith("_n") ? (missing[k] === 1 ? "course" : "courses") : "pts"} needed`}
+                      </span>
+                    </div>
+                  );
+                })}
+                <div style={{ fontSize: 10, color: "#5a6575", marginTop: 14, lineHeight: 1.6, borderTop: "1px solid #181c24", paddingTop: 10 }}>
+                  ⚠ This is calculated automatically from your saved courses and could be wrong — please double-check against your official degree audit. We did our best to get it right.
+                </div>
+              </div>
+            )}
+
+            <div style={V.section}>
+              <div style={{ ...V.secTitle, marginBottom: 8 }}>Courses you're currently taking</div>
+              <div style={{ fontSize: 11, color: "#4a5565", marginBottom: 10 }}>
+                Your transcript only shows graded courses — add anything you're taking right now (not graded yet) so it counts toward your progress and unlocks prerequisites for next semester
+              </div>
+              <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+                <input style={{ ...V.input, width: 200 }} placeholder="e.g. 00960411" autoComplete="off"
+                  value={currentInput}
+                  onChange={e => setCurrentInput(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && addCurrent()} />
+                <button className="btn-primary" style={V.btnPrimary} onClick={addCurrent}>Add →</button>
+              </div>
+              {Object.entries(taken).filter(([, info]) => info.source === "current").length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {Object.entries(taken).filter(([, info]) => info.source === "current").map(([cid, info]) => (
+                    <span key={cid} style={{ display: "flex", alignItems: "center", gap: 6,
+                      fontSize: 11, padding: "4px 10px", borderRadius: 3,
+                      background: "#0a1420", border: "1px solid #1a3a4a", color: "#6b9bc4" }}>
+                      <span className="he">{info.name || cid}</span>
+                      <span style={{ cursor: "pointer", color: "#4a7a9a" }} onClick={() => removeCurrent(cid)}>✕</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <div style={V.section}>
               <div style={{ ...V.secTitle, marginBottom: 8 }}>Add a required course</div>
@@ -857,7 +975,8 @@ export default function App() {
         </div>
         {toast && <div className="toast-anim" style={V.toast}>{toast}</div>}
       </div>
-    );
+      );
+    }
 
     // ── Step: slider ────────────────────────────────────────────────────────
     if (planStep === "slider") {
@@ -881,38 +1000,27 @@ export default function App() {
               <div style={V.section}>
                 {mustPts > 0 && (
                   <div style={{ marginBottom: 20, padding: "10px 14px", background: "#0f0e08", border: "1px solid #3a3010", borderRadius: 6, fontSize: 12, color: "#8a7a30" }}>
-                    {mustPts} pts already locked in from required courses · slider shows total including these
+                    {mustPts} pts already locked in from required courses · totals below include these
                   </div>
                 )}
 
-                <div style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 16 }}>
-                  <div style={{ textAlign: "center", minWidth: 48 }}>
-                    <div style={{ fontSize: 10, color: "#5a6575", marginBottom: 6, letterSpacing: "0.08em" }}>MIN</div>
-                    <div style={{ fontSize: 32, color: "#c8b560", fontWeight: 500 }}>{effectiveMin}</div>
-                    {mustPts > 0 && <div style={{ fontSize: 10, color: "#5a6575" }}>+{remaining(effectiveMin)} free</div>}
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 20, marginBottom: 16 }}>
+                  <div>
+                    <div style={{ fontSize: 10, color: "#5a6575", marginBottom: 6, letterSpacing: "0.08em" }}>MIN PTS</div>
+                    <input type="number" min={mustPts} step={0.5}
+                      value={minPts}
+                      onChange={e => setMinPts(e.target.value === "" ? "" : parseFloat(e.target.value))}
+                      style={{ ...V.input, width: 110, fontSize: 20, textAlign: "center", color: "#c8b560", fontWeight: 500 }} />
+                    {mustPts > 0 && <div style={{ fontSize: 10, color: "#5a6575", marginTop: 6 }}>+{remaining(effectiveMin)} free</div>}
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <input type="range" min={mustPts} max={30} step={0.5}
-                      value={effectiveMin}
-                      onChange={e => { const v = parseFloat(e.target.value); if (v <= effectiveMax) setMinPts(v); }}
-                      style={{ width: "100%", accentColor: "#c8b560", cursor: "pointer" }} />
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#4a5565", marginTop: 2 }}>
-                      <span>{mustPts || 3}</span><span>30</span>
-                    </div>
-                  </div>
-                  <div style={{ textAlign: "center", minWidth: 48 }}>
-                    <div style={{ fontSize: 10, color: "#5a6575", marginBottom: 6, letterSpacing: "0.08em" }}>MAX</div>
-                    <div style={{ fontSize: 32, color: "#c8b560", fontWeight: 500 }}>{effectiveMax}</div>
-                    {mustPts > 0 && <div style={{ fontSize: 10, color: "#5a6575" }}>+{remaining(effectiveMax)} free</div>}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <input type="range" min={mustPts} max={30} step={0.5}
-                      value={effectiveMax}
-                      onChange={e => { const v = parseFloat(e.target.value); if (v >= effectiveMin) setMaxPts(v); }}
-                      style={{ width: "100%", accentColor: "#c8b560", cursor: "pointer" }} />
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#4a5565", marginTop: 2 }}>
-                      <span>{mustPts || 3}</span><span>30</span>
-                    </div>
+                  <div style={{ fontSize: 18, color: "#4a5565", paddingBottom: 10 }}>–</div>
+                  <div>
+                    <div style={{ fontSize: 10, color: "#5a6575", marginBottom: 6, letterSpacing: "0.08em" }}>MAX PTS</div>
+                    <input type="number" min={mustPts} step={0.5}
+                      value={maxPts}
+                      onChange={e => setMaxPts(e.target.value === "" ? "" : parseFloat(e.target.value))}
+                      style={{ ...V.input, width: 110, fontSize: 20, textAlign: "center", color: "#c8b560", fontWeight: 500 }} />
+                    {mustPts > 0 && <div style={{ fontSize: 10, color: "#5a6575", marginTop: 6 }}>+{remaining(effectiveMax)} free</div>}
                   </div>
                 </div>
 
@@ -1089,25 +1197,14 @@ export default function App() {
                 const req = recommendation.statusAfter?.requirements || {};
                 const before = recommendation.statusBefore?.missing || {};
                 const after  = recommendation.statusAfter?.missing || {};
-                const LABELS = {
-                  "חובה":           "Mandatory (חובה)",
-                  "קורס מדעי":      "Science (מדעי)",
-                  "בחירה בנתונים":  "Data electives (נתונים)",
-                  "עתיר נתונים":    "Data-intensive (עתיר)",
-                  "בחירה פקולטית":  "Faculty electives",
-                  "ספורט_n":        "Sport courses",
-                  "מלג_n":          "מלג courses",
-                  "בחירה חופשית":   "Free choice (חופשית)",
-                  "total":          "Total credits",
-                };
-                const rows = Object.keys(LABELS).filter(k => (before[k] || 0) > 0 || (after[k] || 0) > 0);
+                const rows = Object.keys(REQ_LABELS).filter(k => (before[k] || 0) > 0 || (after[k] || 0) > 0);
                 return (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 28 }}>
                     <div style={V.section}>
                       <div style={{ ...V.secTitle, marginBottom: 14 }}>Currently missing</div>
                       {rows.map(k => (
                         <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                          <span style={{ fontSize: 12, color: "#6a7080" }} className="he">{LABELS[k]}</span>
+                          <span style={{ fontSize: 12, color: "#6a7080" }} className="he">{REQ_LABELS[k]}</span>
                           <span style={{ fontSize: 13, color: before[k] > 0 ? "#c46b6b" : "#6bc47a", fontWeight: 600 }}>
                             {before[k] > 0 ? `-${before[k]}` : "✓"}
                           </span>
@@ -1120,7 +1217,7 @@ export default function App() {
                         const diff = (before[k] || 0) - (after[k] || 0);
                         return (
                           <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                            <span style={{ fontSize: 12, color: "#6a7080" }} className="he">{LABELS[k]}</span>
+                            <span style={{ fontSize: 12, color: "#6a7080" }} className="he">{REQ_LABELS[k]}</span>
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                               {diff > 0 && <span style={{ fontSize: 10, color: "#6bc47a" }}>+{diff}</span>}
                               <span style={{ fontSize: 13, color: after[k] > 0 ? "#c46b6b" : "#6bc47a", fontWeight: 600 }}>

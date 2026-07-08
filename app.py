@@ -73,30 +73,36 @@ MANDATORY_SEMESTER = {
     "00940290":7,"00940295":8,
 }
 CATEGORY_PRIORITY = {
-    "עתיר נתונים":20,"בחירה בנתונים":21,"קורס מדעי":22,
+    # NOTE: these must match the exact category strings stored in
+    # courses_labeled.csv (c["category"]), NOT the REQ/progress bucket names
+    # below — "קורסי בחירה בנתונים" (with the קורסי prefix) is what's actually
+    # scraped, matching "קורסי בחירה פקולטיים"'s naming pattern.
+    "עתיר נתונים":20,"קורסי בחירה בנתונים":21,"קורס מדעי":22,
     "מלג":23,"קורס ספורט":24,"בחירה חופשית":25,"קורסי בחירה פקולטיים":26,
 }
 def course_priority(c):
     return MANDATORY_SEMESTER.get(c["id"], CATEGORY_PRIORITY.get(c["category"], 99))
 
 REQ = {
-    "חובה":108.0,"קורס מדעי":5.5,"בחירה בנתונים":24.5,"עתיר נתונים":2.0,
+    # עתיר נתונים is a minimum COURSE COUNT (at least 2 data-intensive
+    # courses), not a point total — matches how מלג_n/ספורט_n are counted.
+    "חובה":108.0,"קורס מדעי":5.5,"בחירה בנתונים":24.5,"עתיר נתונים_n":2,
     "בחירה פקולטית":10.5,"ספורט_n":2,"מלג_n":2,"בחירה חופשית":6.0,"total":155.0,
 }
 
 def compute_progress(taken_ids):
-    p = {k:0.0 for k in ["חובה","קורס מדעי","בחירה בנתונים","עתיר נתונים",
-                           "בחירה פקולטית","ספורט_n","מלג_n","בחירה חופשית","total"]}
-    sport_n = malag_n = 0
+    p = {k:0.0 for k in ["חובה","קורס מדעי","בחירה בנתונים",
+                           "בחירה פקולטית","ספורט_n","מלג_n","עתיר נתונים_n","בחירה חופשית","total"]}
+    sport_n = malag_n = atir_n = 0
     for cid in taken_ids:
         c = COURSES_DB.get(cid)
         if not c: continue
         cat, cr = c["category"], c["credits"]
         if cat == "חובה":                    p["חובה"] += cr
         elif cat == "קורס מדעי":             p["קורס מדעי"] += cr; p["חובה"] += cr
-        elif cat in ("בחירה בנתונים","עתיר נתונים"):
+        elif cat in ("קורסי בחירה בנתונים","עתיר נתונים"):
             p["בחירה בנתונים"] += cr
-            if cat == "עתיר נתונים":         p["עתיר נתונים"] += cr
+            if cat == "עתיר נתונים":         atir_n += 1
         elif cat == "קורסי בחירה פקולטיים":  p["בחירה פקולטית"] += cr
         elif cat == "קורס ספורט":
             sport_n += 1
@@ -106,8 +112,9 @@ def compute_progress(taken_ids):
             if malag_n > 2: p["בחירה חופשית"] += cr
         elif cat == "בחירה חופשית":          p["בחירה חופשית"] += cr
         p["total"] += cr
-    p["ספורט_n"] = sport_n
-    p["מלג_n"]   = malag_n
+    p["ספורט_n"]       = sport_n
+    p["מלג_n"]         = malag_n
+    p["עתיר נתונים_n"] = atir_n
     return p
 
 def weighted_grade(courses):
@@ -124,8 +131,8 @@ def recommend(available_ids, taken_ids, target_pts, must_ids=None, block_ids=Non
     progress = compute_progress(taken_ids)
 
     cat_remaining = {
-        "עתיר נתונים":          max(0, REQ["עתיר נתונים"]   - progress["עתיר נתונים"]),
-        "בחירה בנתונים":        max(0, REQ["בחירה בנתונים"] - progress["בחירה בנתונים"]),
+        "עתיר נתונים":          max(0, REQ["עתיר נתונים_n"] - progress["עתיר נתונים_n"]),
+        "קורסי בחירה בנתונים": max(0, REQ["בחירה בנתונים"] - progress["בחירה בנתונים"]),
         "קורס מדעי":            max(0, REQ["קורס מדעי"]      - progress["קורס מדעי"]),
         "מלג":                  max(0, REQ["מלג_n"]          - progress["מלג_n"]),
         "קורס ספורט":           max(0, REQ["ספורט_n"]        - progress["ספורט_n"]),
@@ -155,11 +162,23 @@ def recommend(available_ids, taken_ids, target_pts, must_ids=None, block_ids=Non
 
     def quota_ok(c):
         cat = c["category"]
+        if cat == "עתיר נתונים":
+            # עתיר נתונים is a subset of קורסי בחירה בנתונים — allow it while
+            # either its own course-count minimum OR the shared elective
+            # point cap still has room, so it isn't blocked once the count is
+            # met while elective points remain, nor allowed to blow past the
+            # elective cap once the count is already satisfied.
+            return (cat_added["עתיר נתונים"] < cat_remaining["עתיר נתונים"]
+                    or cat_added["קורסי בחירה בנתונים"] < cat_remaining["קורסי בחירה בנתונים"])
         if cat not in cat_remaining: return True
         return cat_added[cat] < cat_remaining[cat]
 
     def add_cat(c):
         cat = c["category"]
+        if cat == "עתיר נתונים":
+            cat_added["עתיר נתונים"]          += 1
+            cat_added["קורסי בחירה בנתונים"]  += c["credits"]  # also debits the shared elective cap
+            return
         if cat not in cat_added: return
         cat_added[cat] += 1 if cat in ("מלג","קורס ספורט") else c["credits"]
 
@@ -265,7 +284,7 @@ def api_status():
         "חובה":           round(max(0, REQ["חובה"]          - prog["חובה"]), 1),
         "קורס מדעי":      round(max(0, REQ["קורס מדעי"]     - prog["קורס מדעי"]), 1),
         "בחירה בנתונים":  round(max(0, REQ["בחירה בנתונים"] - prog["בחירה בנתונים"]), 1),
-        "עתיר נתונים":    round(max(0, REQ["עתיר נתונים"]   - prog["עתיר נתונים"]), 1),
+        "עתיר נתונים_n":  max(0, REQ["עתיר נתונים_n"] - prog["עתיר נתונים_n"]),
         "בחירה פקולטית":  round(max(0, REQ["בחירה פקולטית"] - prog["בחירה פקולטית"]), 1),
         "ספורט_n":        max(0, REQ["ספורט_n"]             - prog["ספורט_n"]),
         "מלג_n":          max(0, REQ["מלג_n"]               - prog["מלג_n"]),

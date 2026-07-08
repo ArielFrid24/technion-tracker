@@ -77,6 +77,10 @@ cheesefork_scraper/
 
 ### Run the app
 
+**Easiest way (Windows):** double-click `Start Technion Tracker.bat`. It installs dependencies on first run, starts both servers, and opens your browser automatically. Just close the two windows it opens to stop the app.
+
+**Manual way:**
+
 **Terminal 1 — React frontend:**
 ```bash
 cd ui
