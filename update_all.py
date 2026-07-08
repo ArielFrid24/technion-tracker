@@ -345,6 +345,9 @@ async def step_malag(browser, agg, semester_fallback):
     log("STEP 5: Scraping מלג courses from Technion portal", "blue")
     labeled = load_labeled()
     existing_rows = [r for r in labeled.values() if r.get("category") != "מלג"]
+    # keep prior has_test/exam_date_a/exam_date_b (scrape_exam_dates.py writes these
+    # separately) so rebuilding this category here doesn't wipe them out
+    old_malag = {r["course_id"]: r for r in labeled.values() if r.get("category") == "מלג"}
 
     page = await (await browser.new_context()).new_page()
     all_courses = []
@@ -400,6 +403,7 @@ async def step_malag(browser, agg, semester_fallback):
         name = ex.get("course_name", "") or name_he
         if not name: name = name_scraped or name_he
         final_credits = credits if credits is not None else 2
+        old = old_malag.get(cid, {})
         new_rows.append({
             "course_id": cid, "course_name": name, "category": "מלג",
             "credits": final_credits, "prereqs": prereqs,
@@ -407,6 +411,9 @@ async def step_malag(browser, agg, semester_fallback):
             "avg_general_rank": ex.get("avg_general_rank", ""),
             "n_general_rank":   ex.get("n_general_rank", ""),
             "semester": "",
+            "has_test":    old.get("has_test", ""),
+            "exam_date_a": old.get("exam_date_a", ""),
+            "exam_date_b": old.get("exam_date_b", ""),
         })
 
     log(f"  Scraped {len(new_rows)} מלג courses", "green")
@@ -421,6 +428,9 @@ async def step_free_choice(browser, agg, all_rows_so_far, semester_fallback):
         if r.get("category") in ("מלג", "קורס ספורט")
     }
     existing_rows = [r for r in all_rows_so_far if r.get("category") != "בחירה חופשית"]
+    # keep prior has_test/exam_date_a/exam_date_b (scrape_exam_dates.py writes these
+    # separately) so rebuilding this category here doesn't wipe them out
+    old_free = {r["course_id"]: r for r in all_rows_so_far if r.get("category") == "בחירה חופשית"}
 
     candidates = sorted(
         cid for cid in agg
@@ -445,6 +455,7 @@ async def step_free_choice(browser, agg, all_rows_so_far, semester_fallback):
         name = ex.get("course_name", "") or name_scraped
         if credits is None or credits > 2 or prereqs:
             continue
+        old = old_free.get(cid, {})
         new_rows.append({
             "course_id": cid, "course_name": name, "category": "בחירה חופשית",
             "credits": credits, "prereqs": "",
@@ -452,6 +463,9 @@ async def step_free_choice(browser, agg, all_rows_so_far, semester_fallback):
             "avg_general_rank": ex.get("avg_general_rank", ""),
             "n_general_rank":   ex.get("n_general_rank", ""),
             "semester": "",
+            "has_test":    old.get("has_test", ""),
+            "exam_date_a": old.get("exam_date_a", ""),
+            "exam_date_b": old.get("exam_date_b", ""),
         })
 
     log(f"  Found {len(new_rows)} בחירה חופשית courses", "green")

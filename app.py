@@ -1,12 +1,18 @@
 """
 app.py — Technion course recommender backend
 """
-import csv, glob, json, os, re
+import csv, glob, io, json, os, re, shutil, tempfile, urllib.request, zipfile
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 OUTPUT_DIR  = os.path.dirname(os.path.abspath(__file__))
 LABELED_CSV = os.path.join(OUTPUT_DIR, "courses_labeled.csv")
+
+# Most users get the app via GitHub's "Download ZIP" button, not git clone,
+# so an update can't just be `git pull` — it downloads the latest branch
+# zip straight from GitHub and copies it over the local install.
+GITHUB_REPO   = "ArielFrid24/technion-tracker"
+VERSION_FILE  = os.path.join(OUTPUT_DIR, ".update_version")
 
 app = Flask(__name__)
 CORS(app)
@@ -39,6 +45,8 @@ def load_courses():
                 "grade":    grade,
                 "prereqs":  row.get("prereqs", "").strip(),
                 "has_test": row.get("has_test", "").strip(),  # "1"/"0"/"" (not checked)
+                "exam_date_a": row.get("exam_date_a", "").strip(),  # "DD-MM-YYYY" or ""
+                "exam_date_b": row.get("exam_date_b", "").strip(),
             }
     return courses
 
@@ -88,7 +96,7 @@ REQ = {
     # עתיר נתונים is a minimum COURSE COUNT (at least 2 data-intensive
     # courses), not a point total — matches how מלג_n/ספורט_n are counted.
     "חובה":108.0,"קורס מדעי":5.5,"בחירה בנתונים":24.5,"עתיר נתונים_n":2,
-    "בחירה פקולטית":10.5,"ספורט_n":2,"מלג_n":2,"בחירה חופשית":6.0,"total":155.0,
+    "בחירה פקולטית":10.5,"ספורט_n":2,"מלג_n":3,"בחירה חופשית":6.0,"total":155.0,
 }
 
 def compute_progress(taken_ids):
@@ -110,7 +118,7 @@ def compute_progress(taken_ids):
             if sport_n > 2: p["בחירה חופשית"] += cr
         elif cat == "מלג":
             malag_n += 1
-            if malag_n > 2: p["בחירה חופשית"] += cr
+            if malag_n > REQ["מלג_n"]: p["בחירה חופשית"] += cr
         elif cat == "בחירה חופשית":          p["בחירה חופשית"] += cr
         p["total"] += cr
     p["ספורט_n"]       = sport_n
@@ -202,6 +210,23 @@ def recommend(available_ids, taken_ids, target_pts, must_ids=None, block_ids=Non
     free_cands   = [c for c in candidates if c["id"] not in must_ids]
     free_cands.sort(key=lambda c: (course_priority(c), -c["grade"]))
 
+    # Drop courses whose מועד א' exam date collides with a required course's,
+    # and collapse the rest to at most one course per exam date — the fill
+    # passes below add courses one at a time / via subset-sum and have no
+    # other way to express "these two are mutually exclusive," so pruning the
+    # candidate pool up front is what actually keeps two exam-day clashes
+    # from both landing in the same schedule. Courses with no exam or
+    # unchecked exam data (exam_date_a == "") are never restricted.
+    locked_dates = {c["exam_date_a"] for c in must_courses if c["exam_date_a"]}
+    seen_dates = set(locked_dates)
+    deduped = []
+    for c in free_cands:
+        d = c["exam_date_a"]
+        if d and d in seen_dates: continue
+        if d: seen_dates.add(d)
+        deduped.append(c)
+    free_cands = deduped
+
     def quota_ok(c):
         cat = c["category"]
         if cat == "עתיר נתונים":
@@ -275,6 +300,7 @@ def fmt_schedule(schedule, must_ids):
             "grade":    round(c["grade"], 1),
             "must":     c["id"] in set(must_ids),
             "has_test": c["has_test"],  # "1"/"0"/""
+            "exam_date_a": c["exam_date_a"],
         } for c in sorted(schedule, key=lambda x: (course_priority(x), -x["grade"]))]
     }
 
@@ -351,17 +377,22 @@ def api_recommend():
 @app.route("/api/status", methods=["POST"])
 def api_status():
     taken_ids = set(request.json.get("taken", []))
+    must_ids  = set(request.json.get("must", []))
     prog      = compute_progress(taken_ids)
+    # "missing" reflects taken + planned must-take courses, so a category
+    # covered by a course you've just marked as required shows as done
+    # instead of still nagging you about points you're already about to earn
+    prog_planned = compute_progress(taken_ids | must_ids) if must_ids else prog
     missing   = {
-        "חובה":           round(max(0, REQ["חובה"]          - prog["חובה"]), 1),
-        "קורס מדעי":      round(max(0, REQ["קורס מדעי"]     - prog["קורס מדעי"]), 1),
-        "בחירה בנתונים":  round(max(0, REQ["בחירה בנתונים"] - prog["בחירה בנתונים"]), 1),
-        "עתיר נתונים_n":  max(0, REQ["עתיר נתונים_n"] - prog["עתיר נתונים_n"]),
-        "בחירה פקולטית":  round(max(0, REQ["בחירה פקולטית"] - prog["בחירה פקולטית"]), 1),
-        "ספורט_n":        max(0, REQ["ספורט_n"]             - prog["ספורט_n"]),
-        "מלג_n":          max(0, REQ["מלג_n"]               - prog["מלג_n"]),
-        "בחירה חופשית":   round(max(0, REQ["בחירה חופשית"]  - prog["בחירה חופשית"]), 1),
-        "total":          round(max(0, REQ["total"]          - prog["total"]), 1),
+        "חובה":           round(max(0, REQ["חובה"]          - prog_planned["חובה"]), 1),
+        "קורס מדעי":      round(max(0, REQ["קורס מדעי"]     - prog_planned["קורס מדעי"]), 1),
+        "בחירה בנתונים":  round(max(0, REQ["בחירה בנתונים"] - prog_planned["בחירה בנתונים"]), 1),
+        "עתיר נתונים_n":  max(0, REQ["עתיר נתונים_n"] - prog_planned["עתיר נתונים_n"]),
+        "בחירה פקולטית":  round(max(0, REQ["בחירה פקולטית"] - prog_planned["בחירה פקולטית"]), 1),
+        "ספורט_n":        max(0, REQ["ספורט_n"]             - prog_planned["ספורט_n"]),
+        "מלג_n":          max(0, REQ["מלג_n"]               - prog_planned["מלג_n"]),
+        "בחירה חופשית":   round(max(0, REQ["בחירה חופשית"]  - prog_planned["בחירה חופשית"]), 1),
+        "total":          round(max(0, REQ["total"]          - prog_planned["total"]), 1),
     }
     return jsonify({"progress": prog, "missing": missing, "requirements": REQ})
 
@@ -370,6 +401,76 @@ def api_reload():
     global COURSES_DB
     COURSES_DB = load_courses()
     return jsonify({"count": len(COURSES_DB)})
+
+def _read_local_version():
+    if os.path.exists(VERSION_FILE):
+        return open(VERSION_FILE, encoding="utf-8").read().strip()
+    return None
+
+def _fetch_latest_commit():
+    req = urllib.request.Request(
+        f"https://api.github.com/repos/{GITHUB_REPO}/commits/main",
+        headers={"User-Agent": "technion-tracker-update", "Accept": "application/vnd.github+json"},
+    )
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        data = json.loads(resp.read())
+    return {
+        "sha":     data["sha"],
+        "message": data["commit"]["message"].split("\n")[0],
+        "date":    data["commit"]["author"]["date"],
+    }
+
+@app.route("/api/update/check")
+def api_update_check():
+    try:
+        latest = _fetch_latest_commit()
+    except Exception as e:
+        return jsonify({"error": f"Could not check for updates: {e}"}), 502
+    current = _read_local_version()
+    return jsonify({
+        "current":          current,
+        "latest":           latest["sha"],
+        "latest_message":   latest["message"],
+        "latest_date":      latest["date"],
+        "update_available": current != latest["sha"],
+    })
+
+@app.route("/api/update/apply", methods=["POST"])
+def api_update_apply():
+    try:
+        latest = _fetch_latest_commit()
+
+        zip_req = urllib.request.Request(
+            f"https://github.com/{GITHUB_REPO}/archive/refs/heads/main.zip",
+            headers={"User-Agent": "technion-tracker-update"},
+        )
+        with urllib.request.urlopen(zip_req, timeout=120) as resp:
+            zip_bytes = resp.read()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            zipfile.ZipFile(io.BytesIO(zip_bytes)).extractall(tmp)
+            # GitHub zips the branch into a single "<repo>-<branch>" folder
+            extracted_root = os.path.join(tmp, os.listdir(tmp)[0])
+
+            def copy_tree(src, dst):
+                for name in os.listdir(src):
+                    s, d = os.path.join(src, name), os.path.join(dst, name)
+                    if os.path.isdir(s):
+                        os.makedirs(d, exist_ok=True)
+                        copy_tree(s, d)
+                    else:
+                        shutil.copy2(s, d)
+
+            copy_tree(extracted_root, OUTPUT_DIR)
+
+        with open(VERSION_FILE, "w", encoding="utf-8") as f:
+            f.write(latest["sha"])
+
+        global COURSES_DB
+        COURSES_DB = load_courses()
+        return jsonify({"ok": True, "version": latest["sha"]})
+    except Exception as e:
+        return jsonify({"error": f"Update failed: {e}"}), 500
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)

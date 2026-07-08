@@ -3,5 +3,5 @@ __pycache__/
 *.pyc
 ui/node_modules/
 ui/build/
-semester_*.json
 *.pdf
+.update_version

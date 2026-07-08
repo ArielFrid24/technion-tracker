@@ -96,6 +96,8 @@ python app.py
 
 Open [http://localhost:3000](http://localhost:3000)
 
+If a newer version has been pushed to GitHub, the app shows an "Update available" banner on the home screen with a one-click **Update now** button — no need to re-download the ZIP. It fetches the latest code straight from GitHub and applies it in place; just restart the app afterward.
+
 ### Update course data
 
 ```bash
@@ -139,6 +141,6 @@ copy courses_labeled.csv ui\public\courses_labeled.csv
 | עתיר נתונים (Data-intensive) | 2 pts |
 | בחירה פקולטית (Faculty electives) | 10.5 pts |
 | קורס מדעי (Science) | 5.5 pts |
-| מלג | 2 courses |
+| מלג | 3 courses |
 | ספורט | 2 courses |
 | בחירה חופשית (Free choice) | 6 pts |
