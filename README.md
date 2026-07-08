@@ -136,7 +136,7 @@ copy courses_labeled.csv ui\public\courses_labeled.csv
 
 | Category | Required |
 |---|---|
-| חובה (Mandatory) | 108 pts |
+| חובה (Mandatory) | 102.5 pts |
 | בחירה בנתונים (Data electives) | 24.5 pts |
 | עתיר נתונים (Data-intensive) | 2 pts |
 | בחירה פקולטית (Faculty electives) | 10.5 pts |

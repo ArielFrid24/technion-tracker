@@ -233,6 +233,25 @@ function useTakenCourses() {
   return [taken, set];
 }
 
+function useSavedSchedules() {
+  const [schedules, setSchedulesState] = useState(() => {
+    try {
+      const saved = localStorage.getItem("technion_saved_schedules");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const set = useCallback((updater) => {
+    setSchedulesState((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      try { localStorage.setItem("technion_saved_schedules", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, []);
+  return [schedules, set];
+}
+
 // ─── Tiny components ──────────────────────────────────────────────────────────
 const GradePill = ({ g, theme }) => {
   if (!g) return null;
@@ -283,6 +302,39 @@ const REQ_TO_CATEGORY = {
   "בחירה חופשית":   "בחירה חופשית",
 };
 
+// Mirrors REQ in app.py — duplicated here so the review screen can show
+// "X / Y" progress per category instantly (no round trip) as checkboxes
+// are toggled.
+const REQ_TARGETS = {
+  "חובה": 102.5, "קורס מדעי": 5.5, "בחירה בנתונים": 24.5, "עתיר נתונים_n": 2,
+  "בחירה פקולטית": 10.5, "ספורט_n": 2, "מלג_n": 3, "בחירה חופשית": 6.0,
+};
+
+// Mirrors compute_progress() in app.py — same category rollups (עתיר is a
+// subset of data electives, sport/מלג beyond their required count roll into
+// free choice). Science and Mandatory are kept fully separate.
+function computeProgressLocal(courses) {
+  const p = { "חובה":0,"קורס מדעי":0,"בחירה בנתונים":0,"בחירה פקולטית":0,
+              "ספורט_n":0,"מלג_n":0,"עתיר נתונים_n":0,"בחירה חופשית":0,"total":0 };
+  let sportN = 0, malagN = 0, atirN = 0;
+  courses.forEach(({ category: cat, credits: cr }) => {
+    if (!cat || !cr) return;
+    if (cat === "חובה") p["חובה"] += cr;
+    else if (cat === "קורס מדעי") p["קורס מדעי"] += cr;
+    else if (cat === "קורסי בחירה בנתונים" || cat === "עתיר נתונים") {
+      p["בחירה בנתונים"] += cr;
+      if (cat === "עתיר נתונים") atirN++;
+    }
+    else if (cat === "קורסי בחירה פקולטיים") p["בחירה פקולטית"] += cr;
+    else if (cat === "קורס ספורט") { sportN++; if (sportN > 2) p["בחירה חופשית"] += cr; }
+    else if (cat === "מלג") { malagN++; if (malagN > REQ_TARGETS["מלג_n"]) p["בחירה חופשית"] += cr; }
+    else if (cat === "בחירה חופשית") p["בחירה חופשית"] += cr;
+    p["total"] += cr;
+  });
+  p["ספורט_n"] = sportN; p["מלג_n"] = malagN; p["עתיר נתונים_n"] = atirN;
+  return p;
+}
+
 // Categories the exam-date scraper actually covers (scrape_exam_dates.py) —
 // exam preference toggles only make sense for these.
 const EXAM_PREF_CATEGORIES = [
@@ -297,10 +349,30 @@ const EXAM_PREF_CATEGORIES = [
 export default function App() {
   const [theme, setTheme] = useTheme();
   const T = THEMES[theme];
+
+  const semLabelGlobal = (s) => {
+    if (!s || s.length < 6) return s;
+    const y = s.slice(0, 4), t = s.slice(4);
+    if (t === "01") return `Winter ${y.slice(2)}`;
+    if (t === "02") return `Spring ${String(parseInt(y)+1).slice(2)}`;
+    if (t === "03") return `Summer ${String(parseInt(y)+1).slice(2)}`;
+    return s;
+  };
+  const catColorGlobal = (cat) => {
+    if (!cat) return T.textDim;
+    if (cat.includes("חובה") || cat.includes("מדעי")) return T.accent;
+    if (cat.includes("נתונים") || cat.includes("עתיר")) return T.infoText;
+    if (cat.includes("פקולט")) return T.purpleText;
+    if (cat.includes("ספורט")) return T.successText;
+    if (cat.includes("מלג"))   return T.dangerText;
+    return T.textDim;
+  };
+
   const [taken, setTaken] = useTakenCourses();
+  const [savedSchedules, setSavedSchedules] = useSavedSchedules();
   const [coursesDb, setCoursesDb] = useState({});
   const [dbLoading, setDbLoading] = useState(true);
-  const [view, setView] = useState("home"); // home | upload | manual | review | csv
+  const [view, setView] = useState("home"); // home | upload | manual | review | plan | schedules
   const [updateInfo, setUpdateInfo] = useState(null);
   const [updateApplying, setUpdateApplying] = useState(false);
   const [updateError, setUpdateError] = useState("");
@@ -433,7 +505,8 @@ export default function App() {
       const next = { ...prev };
       parsed.forEach((c) => {
         if (selected.has(c.cid)) {
-          next[c.cid] = { name: c.name, grade: c.gradeStr, credits: c.credits, semester: c.semester, source: "transcript", passed: c.passed !== false };
+          const dbEntry = coursesDb[c.cid] || {};
+          next[c.cid] = { name: c.name, grade: c.gradeStr, credits: c.credits, category: dbEntry.category || "", semester: c.semester, source: "transcript", passed: c.passed !== false };
         }
       });
       return next;
@@ -559,35 +632,68 @@ export default function App() {
             <div style={V.h1}>Review transcript</div>
             <div style={V.sub}>{passedC.length} passed · {failedC.length} excluded — deselect any to skip</div>
 
-            <div style={V.section}>
-              <div style={V.secTitle}>Passed — will be saved</div>
-              <table style={V.table}>
-                <thead><tr>
-                  <th style={V.th}></th>
-                  <th style={V.th}>Course ID</th>
-                  <th style={V.th}>Name</th>
-                  <th style={V.th}>Credits</th>
-                  <th style={V.th}>Grade</th>
-                  <th style={V.th}>Semester</th>
-                </tr></thead>
-                <tbody>
-                  {passedC.map((c) => (
-                    <tr key={c.cid} className="row-hover" onClick={() => toggle(c.cid)}
-                      style={{ cursor: "pointer", background: selected.has(c.cid) ? T.rowSelectBg : "transparent", transition: "background .1s" }}>
-                      <td style={V.td}>
-                        <input type="checkbox" checked={selected.has(c.cid)} onChange={() => toggle(c.cid)}
-                          style={{ accentColor: T.accent, cursor: "pointer" }} onClick={(e) => e.stopPropagation()} />
-                      </td>
-                      <td style={{ ...V.td, color: T.accent, letterSpacing: "0.05em" }}>{c.cid}</td>
-                      <td style={{ ...V.td, color: T.textMuted, maxWidth: 240 }}>{c.name}</td>
-                      <td style={{ ...V.td, color: T.textDim }}>{c.credits ?? "—"}</td>
-                      <td style={V.td}><GradePill g={c.gradeStr} theme={theme} /></td>
-                      <td style={{ ...V.td, color: T.textMuted, fontSize: 11 }}>{c.semester}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {(() => {
+              const withCat = passedC.map(c => ({ ...c, category: coursesDb[c.cid]?.category || "" }));
+              const selectedWithCat = withCat.filter(c => selected.has(c.cid));
+              const progress = computeProgressLocal(selectedWithCat.map(c => ({
+                category: c.category, credits: coursesDb[c.cid]?.credits ?? c.credits,
+              })));
+              const catOrder = Object.entries(REQ_TO_CATEGORY); // [reqKey, categoryString]
+              const knownCats = new Set(catOrder.map(([, cat]) => cat));
+              const grouped = {};
+              withCat.forEach(c => {
+                if (!grouped[c.category]) grouped[c.category] = [];
+                grouped[c.category].push(c);
+              });
+              const otherRows = withCat.filter(c => !knownCats.has(c.category));
+              const groups = [
+                ...catOrder
+                  .filter(([, cat]) => grouped[cat]?.length > 0)
+                  .map(([reqKey, cat]) => ({ reqKey, label: REQ_LABELS[reqKey], rows: grouped[cat] })),
+                ...(otherRows.length > 0 ? [{ reqKey: null, label: "Other / uncategorized", rows: otherRows }] : []),
+              ];
+
+              const renderRows = (rows) => rows.map((c) => (
+                <tr key={c.cid} className="row-hover" onClick={() => toggle(c.cid)}
+                  style={{ cursor: "pointer", background: selected.has(c.cid) ? T.rowSelectBg : "transparent", transition: "background .1s" }}>
+                  <td style={V.td}>
+                    <input type="checkbox" checked={selected.has(c.cid)} onChange={() => toggle(c.cid)}
+                      style={{ accentColor: T.accent, cursor: "pointer" }} onClick={(e) => e.stopPropagation()} />
+                  </td>
+                  <td style={{ ...V.td, color: T.accent, letterSpacing: "0.05em" }}>{c.cid}</td>
+                  <td style={{ ...V.td, color: T.textMuted, maxWidth: 240 }}>{c.name}</td>
+                  <td style={{ ...V.td, color: T.textDim }}>{c.credits ?? "—"}</td>
+                  <td style={V.td}><GradePill g={c.gradeStr} theme={theme} /></td>
+                  <td style={{ ...V.td, color: T.textMuted, fontSize: 11 }}>{c.semester}</td>
+                </tr>
+              ));
+
+              return groups.map(({ reqKey, label, rows }) => (
+                <div style={V.section} key={label}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                    <div style={V.secTitle}>{label}</div>
+                    {reqKey && (
+                      <div style={{ fontSize: 11, color: T.textDim }}>
+                        {progress[reqKey]} / {REQ_TARGETS[reqKey]} {reqKey.endsWith("_n") ? "courses" : "pts"}
+                      </div>
+                    )}
+                  </div>
+                  <table style={V.table}>
+                    <thead><tr>
+                      <th style={V.th}></th>
+                      <th style={V.th}>Course ID</th>
+                      <th style={V.th}>Name</th>
+                      <th style={V.th}>Credits</th>
+                      <th style={V.th}>Grade</th>
+                      <th style={V.th}>Semester</th>
+                    </tr></thead>
+                    <tbody>
+                      {renderRows(rows)}
+                    </tbody>
+                  </table>
+                </div>
+              ));
+            })()}
 
             {failedC.length > 0 && (
               <div style={{ ...V.section, opacity: 0.6 }}>
@@ -721,41 +827,66 @@ export default function App() {
               )}
             </div>
 
-            {takenCount > 0 && (
-              <div style={V.section}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                  <div style={V.secTitle}>All saved courses ({takenCount})</div>
-                  <input style={{ ...V.input, width: 200, padding: "6px 10px" }}
-                    placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
-                </div>
-                <table style={V.table}>
-                  <thead><tr>
-                    <th style={V.th}>Course ID</th>
-                    <th style={V.th}>Name</th>
-                    <th style={V.th}>Grade</th>
-                    <th style={V.th}>Source</th>
-                    <th style={V.th}></th>
-                  </tr></thead>
-                  <tbody>
-                    {filtered.map(([cid, info]) => (
-                      <tr key={cid} className="row-hover">
-                        <td style={{ ...V.td, color: T.accent, letterSpacing: "0.05em" }}>{cid}</td>
-                        <td style={{ ...V.td, color: T.textMuted, maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{info.name}</td>
-                        <td style={V.td}><GradePill g={info.grade} theme={theme} /></td>
-                        <td style={V.td}><SourceDot s={info.source} theme={theme} /></td>
-                        <td style={{ ...V.td, textAlign: "right" }}>
-                          <span className="remove-btn" style={{ color: T.dangerMuted, cursor: "pointer", fontSize: 11, letterSpacing: "0.06em" }}
-                            onClick={() => removeCourse(cid)}>remove</span>
-                        </td>
-                      </tr>
-                    ))}
-                    {filtered.length === 0 && (
-                      <tr><td colSpan={5} style={{ ...V.td, color: T.textDim, textAlign: "center", padding: "24px" }}>no courses match</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            {takenCount > 0 && (() => {
+              const catOrder = Object.entries(REQ_TO_CATEGORY); // [reqKey, categoryString]
+              const knownCats = new Set(catOrder.map(([, c]) => c));
+              const grouped = {};
+              filtered.forEach(([cid, info]) => {
+                const cat = info.category || "";
+                if (!grouped[cat]) grouped[cat] = [];
+                grouped[cat].push([cid, info]);
+              });
+              const otherRows = filtered.filter(([, info]) => !knownCats.has(info.category || ""));
+              const groups = [
+                ...catOrder
+                  .filter(([, cat]) => grouped[cat]?.length > 0)
+                  .map(([reqKey, cat]) => ({ label: REQ_LABELS[reqKey], rows: grouped[cat] })),
+                ...(otherRows.length > 0 ? [{ label: "Other / uncategorized", rows: otherRows }] : []),
+              ];
+
+              return (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                    <div style={V.secTitle}>All saved courses ({takenCount})</div>
+                    <input style={{ ...V.input, width: 200, padding: "6px 10px" }}
+                      placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
+                  </div>
+                  {groups.length === 0 && (
+                    <div style={V.section}>
+                      <div style={{ ...V.td, color: T.textDim, textAlign: "center", padding: "24px" }}>no courses match</div>
+                    </div>
+                  )}
+                  {groups.map(({ label, rows }) => (
+                    <div style={V.section} key={label}>
+                      <div style={V.secTitle}>{label} ({rows.length})</div>
+                      <table style={V.table}>
+                        <thead><tr>
+                          <th style={V.th}>Course ID</th>
+                          <th style={V.th}>Name</th>
+                          <th style={V.th}>Grade</th>
+                          <th style={V.th}>Source</th>
+                          <th style={V.th}></th>
+                        </tr></thead>
+                        <tbody>
+                          {rows.map(([cid, info]) => (
+                            <tr key={cid} className="row-hover">
+                              <td style={{ ...V.td, color: T.accent, letterSpacing: "0.05em" }}>{cid}</td>
+                              <td style={{ ...V.td, color: T.textMuted, maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{info.name}</td>
+                              <td style={V.td}><GradePill g={info.grade} theme={theme} /></td>
+                              <td style={V.td}><SourceDot s={info.source} theme={theme} /></td>
+                              <td style={{ ...V.td, textAlign: "right" }}>
+                                <span className="remove-btn" style={{ color: T.dangerMuted, cursor: "pointer", fontSize: 11, letterSpacing: "0.06em" }}
+                                  onClick={() => removeCourse(cid)}>remove</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
+                </>
+              );
+            })()}
           </div>
         </div>
         {toast && <div className="toast-anim" style={V.toast}>{toast}</div>}
@@ -855,6 +986,19 @@ export default function App() {
       }).then(r => r.json());
       setRecommendation({ ...opt, statusAfter, statusBefore: opt.statusBefore });
       setPlanStep("results");
+    };
+
+    const saveSchedule = () => {
+      const entry = {
+        id: `${Date.now()}`,
+        semester: semInput,
+        savedAt: new Date().toISOString(),
+        weighted_grade: recommendation.weighted_grade,
+        total_credits: recommendation.total_credits,
+        courses: recommendation.courses,
+      };
+      setSavedSchedules(prev => [entry, ...prev]);
+      flash("✓ Schedule saved — view it from the home screen");
     };
 
         const goBack = () => {
@@ -1494,6 +1638,7 @@ export default function App() {
                 <button className="btn-primary" style={V.btnPrimary} onClick={() => setPlanStep("options")}>
                   ← Choose different
                 </button>
+                <button className="btn-ghost" style={V.btnGhost} onClick={saveSchedule}>Save schedule</button>
                 <button className="btn-ghost" style={V.btnGhost} onClick={goBack}>Start over</button>
               </div>
             </div>
@@ -1504,6 +1649,61 @@ export default function App() {
     }
 
     return null;
+  }
+
+  // ─── SAVED SCHEDULES view ────────────────────────────────────────────────
+  if (view === "schedules") {
+    return (
+      <div style={V.wrap}>
+        <style>{css}</style>
+        <div style={V.header}>
+          <span style={V.logo}>TECHNION <span style={V.logoAccent}>TRACKER</span></span>
+          <ThemeToggle theme={theme} onToggle={() => setTheme(theme === "dark" ? "light" : "dark")} />
+        </div>
+        <div style={V.main}>
+          <div className="fade-up">
+            <span style={V.back} onClick={() => { setView("home"); setErr(""); }}>← back</span>
+            <div style={V.h1}>Saved schedules</div>
+            <div style={V.sub}>{savedSchedules.length} saved — schedules you saved from a recommendation for later</div>
+
+            {savedSchedules.length === 0 && (
+              <div style={V.section}>
+                <div style={{ color: T.textDim, textAlign: "center", padding: 24 }}>
+                  No saved schedules yet — save one from a recommendation's results page.
+                </div>
+              </div>
+            )}
+
+            {savedSchedules.map((s) => (
+              <div style={V.section} key={s.id}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <span style={{ fontSize: 14, color: T.textPrimary }}>{semLabelGlobal(s.semester)}</span>
+                    <span style={{ fontSize: 11, color: T.textDim }}>{s.courses.length} courses · {s.total_credits} pts</span>
+                    <span style={{ fontSize: 11, color: s.weighted_grade >= 85 ? T.successText : T.accent }}>
+                      {s.weighted_grade > 0 ? `avg ${s.weighted_grade.toFixed(1)}` : ""}
+                    </span>
+                    <span style={{ fontSize: 10, color: T.textDim }}>saved {new Date(s.savedAt).toLocaleDateString()}</span>
+                  </div>
+                  <span className="remove-btn" style={{ color: T.dangerMuted, cursor: "pointer", fontSize: 11, letterSpacing: "0.06em" }}
+                    onClick={() => setSavedSchedules(prev => prev.filter(x => x.id !== s.id))}>delete</span>
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {s.courses.map(c => (
+                    <span key={c.id} className="he" style={{ fontSize: 11, padding: "3px 8px", borderRadius: 3,
+                      background: T.surfaceMuted, border: `1px solid ${catColorGlobal(c.category)}33`,
+                      color: catColorGlobal(c.category), whiteSpace: "nowrap" }}>
+                      {c.name || c.id}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        {toast && <div className="toast-anim" style={V.toast}>{toast}</div>}
+      </div>
+    );
   }
 
     // ─── HOME view ────────────────────────────────────────────────────────────
@@ -1575,48 +1775,84 @@ export default function App() {
               <div style={V.cardLabel}>→ Plan next semester</div>
               <div style={V.cardDesc}>Enter a semester code and get course recommendations based on your progress.</div>
             </div>
+            <div className="card-hover" style={V.card} onClick={() => { setErr(""); setView("schedules"); }}>
+              <div style={V.cardLabel}>☰ View saved schedules</div>
+              <div style={V.cardDesc}>
+                {savedSchedules.length > 0 ? `${savedSchedules.length} schedule${savedSchedules.length === 1 ? "" : "s"} saved for later.` : "Schedules you save from a recommendation will show up here."}
+              </div>
+            </div>
           </div>
 
-          {takenCount > 0 && (
-            <div style={V.section}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                <div style={V.secTitle}>Saved courses</div>
-                <input style={{ ...V.input, width: 180, padding: "6px 10px" }}
-                  placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
-              </div>
-              <table style={V.table}>
-                <thead><tr>
-                  <th style={V.th}>Course ID</th>
-                  <th style={V.th}>Name</th>
-                  <th style={V.th}>Grade</th>
-                  <th style={V.th}>Source</th>
-                  <th style={V.th}></th>
-                </tr></thead>
-                <tbody>
-                  {(search ? filtered : takenList).slice(0, 20).map(([cid, info]) => (
-                    <tr key={cid} className="row-hover">
-                      <td style={{ ...V.td, color: T.accent, letterSpacing: "0.05em" }}>{cid}</td>
-                      <td style={{ ...V.td, color: T.textMuted, maxWidth: 280, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{info.name}</td>
-                      <td style={V.td}><GradePill g={info.grade} theme={theme} /></td>
-                      <td style={V.td}><SourceDot s={info.source} theme={theme} /></td>
-                      <td style={{ ...V.td, textAlign: "right" }}>
-                        <span className="remove-btn" style={{ color: T.dangerMuted, cursor: "pointer", fontSize: 11 }}
-                          onClick={() => removeCourse(cid)}>✕</span>
-                      </td>
-                    </tr>
-                  ))}
-                  {!search && takenCount > 20 && (
-                    <tr>
-                      <td colSpan={5} style={{ ...V.td, color: T.textDim, textAlign: "center", padding: 16, cursor: "pointer" }}
-                        onClick={() => { setSearch(""); setView("manual"); }}>
-                        + {takenCount - 20} more — view all →
-                      </td>
-                    </tr>
+          {takenCount > 0 && (() => {
+              const catOrder = Object.entries(REQ_TO_CATEGORY); // [reqKey, categoryString]
+              const knownCats = new Set(catOrder.map(([, cat]) => cat));
+              const progress = computeProgressLocal(
+                takenList.map(([, info]) => ({ category: info.category, credits: info.credits }))
+              );
+              const grouped = {};
+              filtered.forEach(([cid, info]) => {
+                const cat = info.category || "";
+                if (!grouped[cat]) grouped[cat] = [];
+                grouped[cat].push([cid, info]);
+              });
+              const otherRows = filtered.filter(([, info]) => !knownCats.has(info.category || ""));
+              const groups = [
+                ...catOrder
+                  .filter(([, cat]) => grouped[cat]?.length > 0)
+                  .map(([reqKey, cat]) => ({ reqKey, label: REQ_LABELS[reqKey], rows: grouped[cat] })),
+                ...(otherRows.length > 0 ? [{ reqKey: null, label: "Other / uncategorized", rows: otherRows }] : []),
+              ];
+
+              return (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                    <div style={V.secTitle}>Saved courses ({takenCount})</div>
+                    <input style={{ ...V.input, width: 180, padding: "6px 10px" }}
+                      placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
+                  </div>
+                  {groups.length === 0 && (
+                    <div style={V.section}>
+                      <div style={{ color: T.textDim, textAlign: "center", padding: 24 }}>no courses match</div>
+                    </div>
                   )}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  {groups.map(({ reqKey, label, rows }) => (
+                    <div style={V.section} key={label}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                        <div style={V.secTitle}>{label} ({rows.length})</div>
+                        {reqKey && (
+                          <div style={{ fontSize: 11, color: T.textDim }}>
+                            {progress[reqKey]} / {REQ_TARGETS[reqKey]} {reqKey.endsWith("_n") ? "courses" : "pts"}
+                          </div>
+                        )}
+                      </div>
+                      <table style={V.table}>
+                        <thead><tr>
+                          <th style={V.th}>Course ID</th>
+                          <th style={V.th}>Name</th>
+                          <th style={V.th}>Grade</th>
+                          <th style={V.th}>Source</th>
+                          <th style={V.th}></th>
+                        </tr></thead>
+                        <tbody>
+                          {rows.map(([cid, info]) => (
+                            <tr key={cid} className="row-hover">
+                              <td style={{ ...V.td, color: T.accent, letterSpacing: "0.05em" }}>{cid}</td>
+                              <td style={{ ...V.td, color: T.textMuted, maxWidth: 280, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{info.name}</td>
+                              <td style={V.td}><GradePill g={info.grade} theme={theme} /></td>
+                              <td style={V.td}><SourceDot s={info.source} theme={theme} /></td>
+                              <td style={{ ...V.td, textAlign: "right" }}>
+                                <span className="remove-btn" style={{ color: T.dangerMuted, cursor: "pointer", fontSize: 11 }}
+                                  onClick={() => removeCourse(cid)}>✕</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
+                </>
+              );
+            })()}
         </div>
       </div>
       {toast && <div className="toast-anim" style={V.toast}>{toast}</div>}

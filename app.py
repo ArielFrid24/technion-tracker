@@ -1,7 +1,7 @@
 """
 app.py — Technion course recommender backend
 """
-import csv, glob, io, json, os, re, shutil, tempfile, urllib.request, zipfile
+import csv, glob, io, json, os, re, shutil, subprocess, tempfile, urllib.request, zipfile
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
@@ -95,7 +95,12 @@ def course_priority(c):
 REQ = {
     # עתיר נתונים is a minimum COURSE COUNT (at least 2 data-intensive
     # courses), not a point total — matches how מלג_n/ספורט_n are counted.
-    "חובה":108.0,"קורס מדעי":5.5,"בחירה בנתונים":24.5,"עתיר נתונים_n":2,
+    # חובה is ONLY courses actually tagged category="חובה" (102.5 pts across
+    # the 29 mandatory courses) — kept fully separate from קורס מדעי (5.5
+    # pts) even though the official program groups them together as part of
+    # the same 108-pt requirement, so the app never reports "missing pts"
+    # against a bucket a student can't actually see which courses fill.
+    "חובה":102.5,"קורס מדעי":5.5,"בחירה בנתונים":24.5,"עתיר נתונים_n":2,
     "בחירה פקולטית":10.5,"ספורט_n":2,"מלג_n":3,"בחירה חופשית":6.0,"total":155.0,
 }
 
@@ -108,7 +113,7 @@ def compute_progress(taken_ids):
         if not c: continue
         cat, cr = c["category"], c["credits"]
         if cat == "חובה":                    p["חובה"] += cr
-        elif cat == "קורס מדעי":             p["קורס מדעי"] += cr; p["חובה"] += cr
+        elif cat == "קורס מדעי":             p["קורס מדעי"] += cr
         elif cat in ("קורסי בחירה בנתונים","עתיר נתונים"):
             p["בחירה בנתונים"] += cr
             if cat == "עתיר נתונים":         atir_n += 1
@@ -403,6 +408,18 @@ def api_reload():
     return jsonify({"count": len(COURSES_DB)})
 
 def _read_local_version():
+    # A real git checkout (the developer's own clone) always knows exactly
+    # what commit it's on — use that instead of .update_version so it isn't
+    # permanently flagged as "outdated" just because that marker file (only
+    # ever written by the zip-based updater below) doesn't exist yet.
+    if os.path.isdir(os.path.join(OUTPUT_DIR, ".git")):
+        try:
+            head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=OUTPUT_DIR,
+                                   capture_output=True, text=True, timeout=5)
+            if head.returncode == 0:
+                return head.stdout.strip()
+        except Exception:
+            pass
     if os.path.exists(VERSION_FILE):
         return open(VERSION_FILE, encoding="utf-8").read().strip()
     return None
@@ -473,4 +490,8 @@ def api_update_apply():
         return jsonify({"error": f"Update failed: {e}"}), 500
 
 if __name__ == "__main__":
-    app.run(port=5000, debug=True)
+    # use_reloader=False matters here: /api/update/apply overwrites app.py
+    # itself (and other .py files) mid-request. With the reloader on, it
+    # detects that file change and kills+restarts the worker process before
+    # the response can be sent — the browser sees that as "Failed to fetch".
+    app.run(port=5000, debug=True, use_reloader=False)
