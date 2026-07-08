@@ -47,6 +47,7 @@ function parseCoursesCsv(text) {
   const catIdx     = headers.indexOf("category");
   const gradeIdx   = headers.indexOf("avg_final_grade");
   const rankIdx    = headers.indexOf("avg_general_rank");
+  const testIdx    = headers.indexOf("has_test");
   const db = {};
   for (let i = 1; i < lines.length; i++) {
     const row = lines[i].split(",");
@@ -59,6 +60,7 @@ function parseCoursesCsv(text) {
       category:(row[catIdx]  || "").trim(),
       avgGrade:parseFloat(row[gradeIdx]) || null,
       avgRank: parseFloat(row[rankIdx])  || null,
+      hasTest: testIdx >= 0 ? (row[testIdx] || "").trim() : "", // "1"/"0"/""
     };
   }
   return db;
@@ -243,7 +245,6 @@ export default function App() {
   const [err, setErr] = useState("");
   const [toast, setToast] = useState("");
   const [manualId, setManualId] = useState("");
-  const [manualName, setManualName] = useState("");
   const [manualGrade, setManualGrade] = useState("");
   const [search, setSearch] = useState("");
   const [semInput, setSemInput] = useState("");
@@ -353,7 +354,7 @@ export default function App() {
     setTaken((prev) => ({
       ...prev,
       [id]: {
-        name: manualName.trim() || dbEntry.name || "—",
+        name: dbEntry.name || "—",
         grade: manualGrade.trim() || "Pass",
         credits: dbEntry.credits ?? null,
         category: dbEntry.category || "",
@@ -363,7 +364,7 @@ export default function App() {
       },
     }));
     flash(`✓ Added ${id}`);
-    setManualId(""); setManualName(""); setManualGrade(""); setErr("");
+    setManualId(""); setManualGrade(""); setErr("");
     manualIdRef.current?.focus();
   };
 
@@ -580,17 +581,11 @@ export default function App() {
             {err && <div style={V.err}>{err}</div>}
 
             <div style={V.section}>
-              <div style={{ display: "grid", gridTemplateColumns: "160px 1fr 140px", gap: 12, marginBottom: 14 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 160px", gap: 12, marginBottom: 14 }}>
                 <div>
                   <div style={{ ...V.secTitle, marginBottom: 6 }}>Course ID *</div>
                   <input ref={manualIdRef} style={V.input} placeholder="e.g. 00960411" value={manualId} autoComplete="off"
                     onChange={(e) => setManualId(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && addManual()} />
-                </div>
-                <div>
-                  <div style={{ ...V.secTitle, marginBottom: 6 }}>Course name</div>
-                  <input style={V.input} placeholder="optional" value={manualName} autoComplete="off"
-                    onChange={(e) => setManualName(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && addManual()} />
                 </div>
                 <div>
@@ -1032,17 +1027,41 @@ export default function App() {
                       <th style={V.th}>Credits</th>
                       <th style={V.th}>Avg grade</th>
                       <th style={V.th}>Avg rating</th>
+                      <th style={V.th}>Exam</th>
+                      <th style={V.th}>Must</th>
+                      <th style={V.th}>Exclude</th>
                     </tr></thead>
                     <tbody>
-                      {browseRows.map(([id, c]) => (
-                        <tr key={id} className="row-hover">
-                          <td style={{ ...V.td, color: "#c8b560", letterSpacing: "0.05em" }}>{id}</td>
-                          <td style={{ ...V.td, color: "#9a9090" }} className="he">{c.name}</td>
-                          <td style={{ ...V.td, color: "#4a5060" }}>{c.credits ?? "—"}</td>
-                          <td style={{ ...V.td, color: c.avgGrade ? "#6bc47a" : "#5a6575" }}>{c.avgGrade ? c.avgGrade.toFixed(1) : "—"}</td>
-                          <td style={{ ...V.td, color: "#5a6575" }}>{c.avgRank ? c.avgRank.toFixed(2) : "—"}</td>
-                        </tr>
-                      ))}
+                      {browseRows.map(([id, c]) => {
+                        const isMust = mustIds.includes(id);
+                        const isBlocked = blockIds.includes(id);
+                        return (
+                          <tr key={id} className="row-hover">
+                            <td style={{ ...V.td, color: "#c8b560", letterSpacing: "0.05em" }}>{id}</td>
+                            <td style={{ ...V.td, color: "#9a9090" }} className="he">{c.name}</td>
+                            <td style={{ ...V.td, color: "#4a5060" }}>{c.credits ?? "—"}</td>
+                            <td style={{ ...V.td, color: c.avgGrade ? "#6bc47a" : "#5a6575" }}>{c.avgGrade ? c.avgGrade.toFixed(1) : "—"}</td>
+                            <td style={{ ...V.td, color: "#5a6575" }}>{c.avgRank ? c.avgRank.toFixed(2) : "—"}</td>
+                            <td style={{ ...V.td, fontSize: 11, color: c.hasTest === "1" ? "#c46b6b" : c.hasTest === "0" ? "#6bc47a" : "#4a5565" }}>
+                              {c.hasTest === "1" ? "exam" : c.hasTest === "0" ? "no exam" : "—"}
+                            </td>
+                            <td style={V.td}>
+                              <span
+                                style={{ cursor: "pointer", fontSize: 10, letterSpacing: "0.04em", color: isMust ? "#c8b560" : "#4a5565" }}
+                                onClick={() => setMustIds(prev => isMust ? prev.filter(x => x !== id) : [...prev, id])}>
+                                {isMust ? "✓ must" : "+ must"}
+                              </span>
+                            </td>
+                            <td style={V.td}>
+                              <span
+                                style={{ cursor: "pointer", fontSize: 10, letterSpacing: "0.04em", color: isBlocked ? "#c46b6b" : "#4a5565" }}
+                                onClick={() => setBlockIds(prev => isBlocked ? prev.filter(x => x !== id) : [...prev, id])}>
+                                {isBlocked ? "✓ excluded" : "+ exclude"}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 )}

@@ -7,6 +7,15 @@ echo   TECHNION TRACKER
 echo ============================================
 echo.
 
+:: Clean up any leftover backend/frontend from a previous run that wasn't
+:: stopped properly, so starting fresh never fails with "port already in use"
+for /f "tokens=5" %%p in ('netstat -ano ^| findstr ":5000 " ^| findstr LISTENING') do (
+    taskkill /F /PID %%p /T >nul 2>&1
+)
+for /f "tokens=5" %%p in ('netstat -ano ^| findstr ":3000 " ^| findstr LISTENING') do (
+    taskkill /F /PID %%p /T >nul 2>&1
+)
+
 where python >nul 2>nul
 if errorlevel 1 (
     echo [ERROR] Python was not found on this computer.
@@ -43,11 +52,12 @@ if not exist "ui\node_modules" (
 echo Starting backend...
 start "Technion Tracker - Backend (keep this window open)" /min cmd /k "python app.py"
 
-timeout /t 2 /nobreak >nul
+ping -n 3 127.0.0.1 >nul
 
 echo Starting app - your browser will open automatically...
 echo.
-echo To stop the app later, just close the two windows this opened.
+echo To stop the app later, double-click "Stop Technion Tracker.bat"
+echo (or just leave it running - next time you start, leftovers are cleaned up automatically).
 echo.
 pushd ui
 start "Technion Tracker - App (keep this window open)" /min cmd /k "npm start"

@@ -77,7 +77,7 @@ cheesefork_scraper/
 
 ### Run the app
 
-**Easiest way (Windows):** double-click `Start Technion Tracker.bat`. It installs dependencies on first run, starts both servers, and opens your browser automatically. Just close the two windows it opens to stop the app.
+**Easiest way (Windows):** double-click `Start Technion Tracker.bat`. It installs dependencies on first run, starts both servers, and opens your browser automatically. Double-click `Stop Technion Tracker.bat` when you're done — and if you forget, the next `Start` automatically cleans up any leftover session first.
 
 **Manual way:**
 
