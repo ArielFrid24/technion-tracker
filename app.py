@@ -129,6 +129,24 @@ def compute_progress(taken_ids):
     p["ספורט_n"]       = sport_n
     p["מלג_n"]         = malag_n
     p["עתיר נתונים_n"] = atir_n
+
+    # Points earned beyond a category's own requirement roll over into the
+    # next broader elective bucket instead of being ignored — surplus data
+    # electives count toward faculty electives, and surplus faculty
+    # electives (plus surplus science, and surplus sport/מלג already folded
+    # in above) count toward free choice.
+    data_overflow = max(0.0, p["בחירה בנתונים"] - REQ["בחירה בנתונים"])
+    p["בחירה בנתונים"] = min(p["בחירה בנתונים"], REQ["בחירה בנתונים"])
+    p["בחירה פקולטית"] += data_overflow
+
+    fac_overflow = max(0.0, p["בחירה פקולטית"] - REQ["בחירה פקולטית"])
+    p["בחירה פקולטית"] = min(p["בחירה פקולטית"], REQ["בחירה פקולטית"])
+    p["בחירה חופשית"] += fac_overflow
+
+    sci_overflow = max(0.0, p["קורס מדעי"] - REQ["קורס מדעי"])
+    p["קורס מדעי"] = min(p["קורס מדעי"], REQ["קורס מדעי"])
+    p["בחירה חופשית"] += sci_overflow
+
     return p
 
 def weighted_grade(courses):

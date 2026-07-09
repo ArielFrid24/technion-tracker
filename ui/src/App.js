@@ -332,6 +332,23 @@ function computeProgressLocal(courses) {
     p["total"] += cr;
   });
   p["ספורט_n"] = sportN; p["מלג_n"] = malagN; p["עתיר נתונים_n"] = atirN;
+
+  // Surplus data electives roll into faculty electives, and surplus
+  // faculty electives (plus surplus science and surplus sport/מלג, the
+  // latter already folded in above) roll into free choice — mirrors
+  // compute_progress() in app.py.
+  const dataOverflow = Math.max(0, p["בחירה בנתונים"] - REQ_TARGETS["בחירה בנתונים"]);
+  p["בחירה בנתונים"] = Math.min(p["בחירה בנתונים"], REQ_TARGETS["בחירה בנתונים"]);
+  p["בחירה פקולטית"] += dataOverflow;
+
+  const facOverflow = Math.max(0, p["בחירה פקולטית"] - REQ_TARGETS["בחירה פקולטית"]);
+  p["בחירה פקולטית"] = Math.min(p["בחירה פקולטית"], REQ_TARGETS["בחירה פקולטית"]);
+  p["בחירה חופשית"] += facOverflow;
+
+  const sciOverflow = Math.max(0, p["קורס מדעי"] - REQ_TARGETS["קורס מדעי"]);
+  p["קורס מדעי"] = Math.min(p["קורס מדעי"], REQ_TARGETS["קורס מדעי"]);
+  p["בחירה חופשית"] += sciOverflow;
+
   return p;
 }
 
